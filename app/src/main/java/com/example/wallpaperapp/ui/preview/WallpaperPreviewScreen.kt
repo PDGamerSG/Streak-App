@@ -101,7 +101,7 @@ fun WallpaperPreviewScreen(
                     .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(160.dp))
+                Spacer(Modifier.height(24.dp))
 
                 if (uiState.isLoading) {
                     CircularProgressIndicator(color = DotStreakAccent)
@@ -121,12 +121,31 @@ fun WallpaperPreviewScreen(
                         val daysLeft = ym.lengthOfMonth() - today.dayOfMonth
 
                         Text(
-                            text = habit.name,
+                            text = habit.name.uppercase(),
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Light,
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 1.5.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "${habitWithDots.streak}",
+                            color = DotStreakAccent,
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.Thin,
                             modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "DAY STREAK",
+                            color = Color(0xFF888888),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Light,
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 1.5.sp
                         )
                         Spacer(Modifier.height(10.dp))
 
@@ -144,21 +163,14 @@ fun WallpaperPreviewScreen(
 
                         Spacer(Modifier.height(8.dp))
 
-                        // Stats — percentage is completed-this-month / days-passed
-                        val monthStart = today.withDayOfMonth(1)
-                        val completedThisMonth = habitWithDots.logs.count { log ->
-                            !log.date.isBefore(monthStart) && !log.date.isAfter(today) &&
-                            log.status == com.example.wallpaperapp.data.model.DayStatus.COMPLETED
-                        }
-                        val pct = if (today.dayOfMonth > 0)
-                            completedThisMonth * 100 / today.dayOfMonth else 0
-
                         Text(
-                            text = "${daysLeft}d left",
-                            color = DotStreakAccent,
-                            fontSize = 12.sp,
+                            text = "${daysLeft} DAYS LEFT",
+                            color = Color(0xFF666666),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Light,
                             modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 1.5.sp
                         )
 
                         Spacer(Modifier.height(32.dp))

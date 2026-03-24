@@ -46,21 +46,33 @@ object WallpaperExporter {
         val paddingH    = w * 0.10f
         val usableWidth = w - paddingH * 2
         val cellSize    = usableWidth / DOTS_PER_ROW
-        val dotRadius   = cellSize * 0.20f          // small, clean dots
+        val dotRadius   = cellSize * 0.28f          // slightly larger, closer-feeling dots
         val gridStartX  = paddingH
 
         // ── paints ───────────────────────────────────────────────────────────
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.WHITE
-            textSize      = h * 0.030f
-            typeface      = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            letterSpacing = 0.04f
+            textSize      = h * 0.028f
+            typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.08f
+        }
+        val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color         = android.graphics.Color.parseColor(ACCENT_COLOR)
+            textSize      = h * 0.042f
+            typeface      = Typeface.create("sans-serif-thin", Typeface.NORMAL)
+            letterSpacing = 0.02f
+        }
+        val streakLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color         = android.graphics.Color.parseColor("#888888")
+            textSize      = h * 0.016f
+            typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.12f
         }
         val statsPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color         = android.graphics.Color.parseColor(ACCENT_COLOR)
-            textSize      = h * 0.018f
-            typeface      = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            letterSpacing = 0.06f
+            color         = android.graphics.Color.parseColor("#666666")
+            textSize      = h * 0.016f
+            typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            letterSpacing = 0.10f
         }
         val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color   = android.graphics.Color.parseColor(DIM_COLOR)
@@ -107,10 +119,12 @@ object WallpaperExporter {
         val lineH     = h * 0.012f      // general line gap
 
         fun sectionHeight(s: Section): Float =
-            namePaint.textSize  + lineH * 1.5f +        // habit name
-            s.rows * cellSize   +                       // dot grid
-            lineH * 1.5f        +                       // gap
-            statsPaint.textSize                         // stats
+            namePaint.textSize      + lineH * 1.2f +    // habit name
+            streakPaint.textSize    + lineH * 0.4f +    // big streak number
+            streakLabelPaint.textSize + lineH * 1.8f +  // "DAY STREAK" label
+            s.rows * cellSize       +                   // dot grid
+            lineH * 1.2f            +                   // gap
+            statsPaint.textSize                         // "Xd left"
 
         val totalH = sections.sumOf { sectionHeight(it).toDouble() }.toFloat() +
                      (sections.size - 1) * habitGap
@@ -121,10 +135,22 @@ object WallpaperExporter {
         // ── draw sections ────────────────────────────────────────────────────
         sections.forEachIndexed { i, s ->
 
-            // Habit name — centred
-            val nameX = (w - namePaint.measureText(s.habit.name)) / 2f
-            canvas.drawText(s.habit.name, nameX, y + namePaint.textSize, namePaint)
-            y += namePaint.textSize + lineH * 1.8f
+            // Habit name — centred, light
+            val nameText = s.habit.name.uppercase()
+            val nameX = (w - namePaint.measureText(nameText)) / 2f
+            canvas.drawText(nameText, nameX, y + namePaint.textSize, namePaint)
+            y += namePaint.textSize + lineH * 1.2f
+
+            // Big streak number + "DAY STREAK" label — centred
+            val streakNumText = "${s.streak}"
+            val streakNumX = (w - streakPaint.measureText(streakNumText)) / 2f
+            canvas.drawText(streakNumText, streakNumX, y + streakPaint.textSize, streakPaint)
+            y += streakPaint.textSize + lineH * 0.4f
+
+            val streakLabelText = "DAY STREAK"
+            val streakLabelX = (w - streakLabelPaint.measureText(streakLabelText)) / 2f
+            canvas.drawText(streakLabelText, streakLabelX, y + streakLabelPaint.textSize, streakLabelPaint)
+            y += streakLabelPaint.textSize + lineH * 1.8f
 
             // Dot grid — each row aligns to cellSize
             s.dots.forEachIndexed { index, dot ->
@@ -139,8 +165,8 @@ object WallpaperExporter {
             }
             y += s.rows * cellSize + lineH * 1.8f
 
-            // Stats — centred, orange
-            val statsText = "${s.daysLeft}d left"
+            // Stats — centred, subdued
+            val statsText = "${s.daysLeft} DAYS LEFT"
             val statsX    = (w - statsPaint.measureText(statsText)) / 2f
             canvas.drawText(statsText, statsX, y + statsPaint.textSize, statsPaint)
             y += statsPaint.textSize

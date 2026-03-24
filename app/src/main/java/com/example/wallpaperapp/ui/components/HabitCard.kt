@@ -30,7 +30,6 @@ import com.example.wallpaperapp.domain.DotState
 import com.example.wallpaperapp.domain.StreakResult
 import com.example.wallpaperapp.ui.theme.DotStreakCard
 import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
-import kotlin.math.roundToInt
 
 @Composable
 fun HabitCard(
@@ -125,21 +124,11 @@ fun HabitCard(
             Spacer(Modifier.height(6.dp))
 
             // Stats row
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "${streakResult.daysLeft}d left",
-                    color = habitColor,
-                    fontSize = 12.sp
-                )
-                Text(
-                    text = "${streakResult.completionPercent.roundToInt()}% complete",
-                    color = DotStreakSecondaryText,
-                    fontSize = 12.sp
-                )
-            }
+            Text(
+                text = "${streakResult.daysLeft}d left",
+                color = habitColor,
+                fontSize = 12.sp
+            )
         }
     }
 }

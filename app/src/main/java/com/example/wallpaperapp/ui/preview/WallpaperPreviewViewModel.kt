@@ -10,6 +10,7 @@ import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.repository.HabitRepository
 import com.example.wallpaperapp.domain.DotGridGenerator
 import com.example.wallpaperapp.domain.DotState
+import com.example.wallpaperapp.domain.StreakCalculator
 import com.example.wallpaperapp.export.WallpaperExporter
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,8 @@ import java.time.LocalDate
 data class HabitWithDots(
     val habit: Habit,
     val dots: List<DotState>,
-    val logs: List<DayLog>
+    val logs: List<DayLog>,
+    val streak: Int = 0
 )
 
 data class PreviewUiState(
@@ -59,7 +61,8 @@ class WallpaperPreviewViewModel(private val repository: HabitRepository) : ViewM
                                 HabitWithDots(
                                     habit = habit,
                                     dots = DotGridGenerator.generate(habit, logs, today),
-                                    logs = logs
+                                    logs = logs,
+                                    streak = StreakCalculator.calculate(habit, logs, today).currentStreak
                                 )
                             }
                         }

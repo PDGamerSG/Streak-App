@@ -20,10 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Wallpaper
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -44,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -247,7 +244,9 @@ private fun HabitCardWithMenu(
             java.time.format.TextStyle.FULL, java.util.Locale.getDefault()
         ) + " ${today.year}"
         val thisMonthDays = (toDay - fromDay + 1).coerceAtLeast(0)
-        val totalStreak = thisMonthDays + priorDays
+        // Prior days only count when streak is unbroken from day 1 of this month
+        val effectivePriorDays = if (fromDay == 1) priorDays else 0
+        val totalStreak = thisMonthDays + effectivePriorDays
 
         AlertDialog(
             onDismissRequest = { showStreakEdit = false },
@@ -288,36 +287,25 @@ private fun HabitCardWithMenu(
                         }
                     }
 
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "= $thisMonthDays days this month",
-                        fontSize = 12.sp, color = Color(0xFFAAAAAA),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-
                     Spacer(Modifier.height(16.dp))
 
-                    // Prior days row
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Days before this month", fontSize = 12.sp)
-                        OutlinedTextField(
+                    // Prior days — only shown (and applied) when fromDay == 1
+                    if (fromDay == 1) {
+                        androidx.compose.material3.OutlinedTextField(
                             value = if (priorDays == 0) "" else priorDays.toString(),
                             onValueChange = { v ->
                                 priorDays = v.filter { it.isDigit() }.toIntOrNull() ?: 0
                             },
+                            label = { Text("Streak days before this month") },
                             placeholder = { Text("0") },
-                            modifier = Modifier.width(72.dp),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
                             singleLine = true
                         )
+                        Spacer(Modifier.height(12.dp))
                     }
-
-                    Spacer(Modifier.height(12.dp))
 
                     // Total streak summary
                     Box(
@@ -326,19 +314,29 @@ private fun HabitCardWithMenu(
                             .background(Color(0xFF1E1E1E), androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
                             .padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
-                        Text(
-                            "Total streak: $totalStreak days",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = Color.White
-                        )
+                        Column {
+                            Text(
+                                "Total streak: $totalStreak days",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = Color.White
+                            )
+                            if (fromDay > 1) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Streak restarted from ${today.withDayOfMonth(fromDay).format(fmt)}",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF888888)
+                                )
+                            }
+                        }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     showStreakEdit = false
-                    onSaveStreakOffset(fromDay, toDay, priorDays)
+                    onSaveStreakOffset(fromDay, toDay, effectivePriorDays)
                 }) { Text("Save") }
             },
             dismissButton = { TextButton(onClick = { showStreakEdit = false }) { Text("Cancel") } }
