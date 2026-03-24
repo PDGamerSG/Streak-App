@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.\\(gradle|kts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(gradle|kts\\)$\")",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew compileDebugKotlin)"
     ]
   }
 }

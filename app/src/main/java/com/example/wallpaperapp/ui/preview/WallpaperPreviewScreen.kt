@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallpaperapp.ui.components.DotGridCanvas
-import com.example.wallpaperapp.ui.components.parseColor
 import com.example.wallpaperapp.ui.theme.DotStreakAccent
 import com.example.wallpaperapp.ui.theme.DotStreakBackground
 import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
@@ -115,58 +114,54 @@ fun WallpaperPreviewScreen(
                     )
                 } else {
                     uiState.habits.forEach { habitWithDots ->
-                        val habit = habitWithDots.habit
-                        val habitColor = parseColor(habit.color)
+                        val habit  = habitWithDots.habit
+                        val dotsPerRow = com.example.wallpaperapp.domain.DotGridGenerator.WALLPAPER_DOTS_PER_ROW
+                        val today  = java.time.LocalDate.now()
+                        val ym     = java.time.YearMonth.of(today.year, today.month)
+                        val daysLeft = ym.lengthOfMonth() - today.dayOfMonth
 
-                        // Habit header
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = habit.name,
-                                color = Color.White.copy(alpha = 0.85f),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                        Text(
+                            text = habit.name,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Normal,
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(10.dp))
 
-                        Spacer(Modifier.height(6.dp))
-
-                        // Dot grid
+                        // Dot grid — 7 per row
                         val rows = kotlin.math.ceil(
-                            habitWithDots.dots.size.toDouble() / 20
+                            habitWithDots.dots.size.toDouble() / dotsPerRow
                         ).toInt().coerceAtLeast(1)
                         DotGridCanvas(
                             dots = habitWithDots.dots,
+                            dotsPerRow = dotsPerRow,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height((rows * 22).dp)
+                                .height((rows * 28).dp)
                         )
 
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(8.dp))
 
-                        // Stats
-                        val completedCount = habitWithDots.logs.count {
-                            it.status == com.example.wallpaperapp.data.model.DayStatus.COMPLETED
+                        // Stats — percentage is completed-this-month / days-passed
+                        val monthStart = today.withDayOfMonth(1)
+                        val completedThisMonth = habitWithDots.logs.count { log ->
+                            !log.date.isBefore(monthStart) && !log.date.isAfter(today) &&
+                            log.status == com.example.wallpaperapp.data.model.DayStatus.COMPLETED
                         }
-                        val totalDays = java.time.temporal.ChronoUnit.DAYS
-                            .between(habit.startDate, habit.endDate).toInt() + 1
-                        val daysLeft = maxOf(
-                            0,
-                            java.time.temporal.ChronoUnit.DAYS
-                                .between(java.time.LocalDate.now(), habit.endDate).toInt()
-                        )
-                        val pct = if (totalDays > 0) (completedCount * 100f / totalDays).roundToInt() else 0
+                        val pct = if (today.dayOfMonth > 0)
+                            completedThisMonth * 100 / today.dayOfMonth else 0
 
                         Text(
-                            text = "${daysLeft}d left · $pct%",
-                            color = habitColor,
-                            fontSize = 12.sp
+                            text = "${daysLeft}d left",
+                            color = DotStreakAccent,
+                            fontSize = 12.sp,
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
                         )
 
-                        Spacer(Modifier.height(28.dp))
+                        Spacer(Modifier.height(32.dp))
                     }
                 }
             }

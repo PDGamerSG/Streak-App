@@ -29,7 +29,7 @@ fun DotGridCanvas(
             val center = Offset(cx, cy)
             val color = parseColor(dot.colorHex)
 
-            drawCircle(color = color, radius = dotRadius, center = center)
+            if (dot.isVisible) drawCircle(color = color, radius = dotRadius, center = center)
         }
     }
 }

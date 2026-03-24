@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +39,7 @@ fun HabitCard(
     dots: List<DotState>,
     streakResult: StreakResult,
     milestoneBadge: Int?,
+    onEditStreak: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val habitColor = parseColor(color)
@@ -85,21 +90,36 @@ fun HabitCard(
                         }
                     }
                 }
-                Text(
-                    text = "\uD83D\uDD25 ${streakResult.currentStreak} day streak",
-                    color = DotStreakSecondaryText,
-                    fontSize = 12.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "\uD83D\uDD25 ${streakResult.currentStreak} day streak",
+                        color = DotStreakSecondaryText,
+                        fontSize = 12.sp
+                    )
+                    IconButton(
+                        onClick = onEditStreak,
+                        modifier = Modifier.size(20.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "Edit streak",
+                            tint = DotStreakSecondaryText,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // Dot grid preview
+            // Dot grid preview — height grows with number of rows
+            val dotRows = kotlin.math.ceil(dots.size.toDouble() / com.example.wallpaperapp.domain.DotGridGenerator.DOTS_PER_ROW)
+                .toInt().coerceAtLeast(1)
             DotGridCanvas(
                 dots = dots,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
+                    .height((dotRows * 22).dp)
             )
 
             Spacer(Modifier.height(6.dp))

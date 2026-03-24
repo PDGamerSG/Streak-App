@@ -4,6 +4,7 @@ import com.example.wallpaperapp.data.model.DayLog
 import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.model.Habit
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
 data class StreakResult(
@@ -25,7 +26,7 @@ object StreakCalculator {
         today: LocalDate = LocalDate.now()
     ): StreakResult {
         val totalDays = (ChronoUnit.DAYS.between(habit.startDate, habit.endDate) + 1).toInt()
-        val daysLeft = maxOf(0, ChronoUnit.DAYS.between(today, habit.endDate).toInt())
+        val daysLeft = YearMonth.of(today.year, today.month).lengthOfMonth() - today.dayOfMonth
         val logMap: Map<LocalDate, DayStatus> = logs.associate { it.date to it.status }
 
         // Count completed days (including today if logged)
@@ -64,7 +65,7 @@ object StreakCalculator {
         bestStreak = maxOf(bestStreak, currentStreak)
 
         return StreakResult(
-            currentStreak = currentStreak,
+            currentStreak = currentStreak + habit.streakOffset,
             bestStreak = bestStreak,
             completionPercent = completionPercent,
             daysLeft = daysLeft,

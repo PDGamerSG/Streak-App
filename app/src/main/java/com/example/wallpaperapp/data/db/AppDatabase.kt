@@ -33,7 +33,7 @@ class AppDatabase private constructor(context: Context) {
     }
 
     internal class DbHelper(context: Context) :
-        SQLiteOpenHelper(context, "dotstreak.db", null, 1) {
+        SQLiteOpenHelper(context, "dotstreak.db", null, 2) {
 
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
@@ -43,7 +43,8 @@ class AppDatabase private constructor(context: Context) {
                     startDate TEXT NOT NULL,
                     endDate TEXT NOT NULL,
                     color TEXT NOT NULL,
-                    reminderTime TEXT NOT NULL
+                    reminderTime TEXT NOT NULL,
+                    streakOffset INTEGER NOT NULL DEFAULT 0
                 )"""
             )
             db.execSQL(
@@ -59,9 +60,9 @@ class AppDatabase private constructor(context: Context) {
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            db.execSQL("DROP TABLE IF EXISTS day_logs")
-            db.execSQL("DROP TABLE IF EXISTS habits")
-            onCreate(db)
+            if (oldVersion < 2) {
+                db.execSQL("ALTER TABLE habits ADD COLUMN streakOffset INTEGER NOT NULL DEFAULT 0")
+            }
         }
 
         override fun onConfigure(db: SQLiteDatabase) {

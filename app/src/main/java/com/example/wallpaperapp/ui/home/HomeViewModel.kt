@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.wallpaperapp.data.model.DayLog
+import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.repository.HabitRepository
 import com.example.wallpaperapp.domain.DotGridGenerator
@@ -11,6 +12,7 @@ import com.example.wallpaperapp.domain.DotState
 import com.example.wallpaperapp.domain.StreakCalculator
 import com.example.wallpaperapp.domain.StreakResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -94,6 +96,29 @@ class HomeViewModel(private val repository: HabitRepository) : ViewModel() {
 
     fun deleteHabit(habitId: Long) {
         viewModelScope.launch { repository.deleteHabit(habitId) }
+    }
+
+    /** Backfills the fromDay..toDay range as COMPLETED, earlier days as MISSED, sets prior offset.
+     *  Also extends habit.startDate backwards if the chosen range predates it. */
+    fun updateStreak(habitId: Long, fromDay: Int, toDay: Int, priorDays: Int) {
+        viewModelScope.launch {
+            val habit = repository.getHabitById(habitId).first() ?: return@launch
+            val today = LocalDate.now()
+            val firstCompletedDate = today.withDayOfMonth(fromDay)
+
+            // Write a log for every past day of this month (ignore startDate restriction)
+            for (dayOfMonth in 1..today.dayOfMonth) {
+                val date = today.withDayOfMonth(dayOfMonth)
+                if (date.isAfter(habit.endDate)) continue
+                val status = if (dayOfMonth in fromDay..toDay) DayStatus.COMPLETED else DayStatus.MISSED
+                repository.upsertDayLog(DayLog(habitId = habitId, date = date, status = status))
+            }
+
+            // Push habit startDate back if needed so the new logs fall within the range
+            val newStartDate = if (firstCompletedDate.isBefore(habit.startDate))
+                firstCompletedDate else habit.startDate
+            repository.upsertHabit(habit.copy(startDate = newStartDate, streakOffset = priorDays))
+        }
     }
 
     companion object {

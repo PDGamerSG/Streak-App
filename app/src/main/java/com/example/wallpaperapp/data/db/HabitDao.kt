@@ -64,6 +64,7 @@ class HabitDao(private val db: AppDatabase) {
         put("endDate", endDate.toString())
         put("color", color)
         put("reminderTime", reminderTime)
+        put("streakOffset", streakOffset)
     }
 
     private fun android.database.Cursor.toHabit() = Habit(
@@ -72,6 +73,7 @@ class HabitDao(private val db: AppDatabase) {
         startDate = LocalDate.parse(getString(getColumnIndexOrThrow("startDate"))),
         endDate = LocalDate.parse(getString(getColumnIndexOrThrow("endDate"))),
         color = getString(getColumnIndexOrThrow("color")),
-        reminderTime = getString(getColumnIndexOrThrow("reminderTime"))
+        reminderTime = getString(getColumnIndexOrThrow("reminderTime")),
+        streakOffset = getInt(getColumnIndexOrThrow("streakOffset"))
     )
 }
