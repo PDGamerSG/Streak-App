@@ -251,6 +251,8 @@ private fun HabitCardWithMenu(
             streakResult = habitStats.streakResult,
             milestoneBadge = habitStats.milestoneBadge,
             isInfinite = habitStats.habit.isInfinite,
+            isWeekly = habitStats.habit.isWeekly,
+            weeklyTarget = habitStats.habit.weeklyTarget,
             onEditStreak = { showStreakEdit = true },
             onMoreClick = { showMenu = true }
         )

@@ -44,12 +44,15 @@ fun HabitCard(
     streakResult: StreakResult,
     milestoneBadge: Int?,
     isInfinite: Boolean = false,
+    isWeekly: Boolean = false,
+    weeklyTarget: Int = 1,
     onEditStreak: () -> Unit = {},
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val habitColor = parseColor(color)
-    val dotRows = ceil(dots.size.toDouble() / DotGridGenerator.DOTS_PER_ROW).toInt().coerceAtLeast(1)
+    val dotsPerRow = if (isWeekly) DotGridGenerator.WEEKLY_DOTS_PER_ROW else DotGridGenerator.DOTS_PER_ROW
+    val dotRows = ceil(dots.size.toDouble() / dotsPerRow).toInt().coerceAtLeast(1)
 
     Row(
         modifier = modifier
@@ -152,7 +155,7 @@ fun HabitCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "DAY\nSTREAK",
+                        text = if (isWeekly) "WEEK\nSTREAK" else "DAY\nSTREAK",
                         color = Color(0xFF4A4A4A),
                         fontSize = 8.sp,
                         letterSpacing = 0.8.sp,
@@ -162,18 +165,26 @@ fun HabitCard(
                     )
                 }
 
-                // Pill: "X D LEFT" or "ONGOING"
+                // Pill: weekly target / days left / ongoing
                 val pillBg: Color
                 val pillFg: Color
                 val pillText: String
-                if (isInfinite) {
-                    pillBg = Color(0xFF0D200D)
-                    pillFg = Color(0xFF3DAA55)
-                    pillText = "ONGOING"
-                } else {
-                    pillBg = Color(0xFF0D1828)
-                    pillFg = Color(0xFF4A90D9)
-                    pillText = "${streakResult.daysLeft}D LEFT"
+                when {
+                    isWeekly -> {
+                        pillBg = Color(0xFF1A1030)
+                        pillFg = Color(0xFF9B7FE8)
+                        pillText = "×$weeklyTarget/WK"
+                    }
+                    isInfinite -> {
+                        pillBg = Color(0xFF0D200D)
+                        pillFg = Color(0xFF3DAA55)
+                        pillText = "ONGOING"
+                    }
+                    else -> {
+                        pillBg = Color(0xFF0D1828)
+                        pillFg = Color(0xFF4A90D9)
+                        pillText = "${streakResult.daysLeft}D LEFT"
+                    }
                 }
                 Box(
                     modifier = Modifier
@@ -198,6 +209,7 @@ fun HabitCard(
             // Dot grid
             DotGridCanvas(
                 dots = dots,
+                dotsPerRow = dotsPerRow,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height((dotRows * 22).dp)
