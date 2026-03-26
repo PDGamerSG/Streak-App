@@ -8,6 +8,20 @@
 
 ## Features & Fixes (in order of implementation)
 
+### Weekly Habit Type
+- New **frequency selector** in Add/Edit screen: Daily (default) or Weekly
+- When Weekly is chosen, a **1–7 target picker** appears (circle buttons) showing how many days per week count as a completed week
+- `generateWeekly()`: one dot per ISO week — white if target met, orange if missed, gray if current week in progress
+- `calculateWeekly()`: streak counts consecutive completed weeks; current in-progress week is skipped, not counted as a break
+- HabitCard shows **"WEEK STREAK"** label and purple **"×N/WK"** pill for weekly habits
+- Wallpaper and preview render weekly habits at 4 dots/row with "WEEK STREAK" label
+- DB migrated to version 3 adding `frequencyType` and `weeklyTarget` columns
+
+### Wallpaper Preview Redesign
+- Preview screen now shows a **phone frame mockup** (9:19.5 aspect ratio, rounded bezel, home indicator bar)
+- Inside the frame: simulated lock screen with real current time, today's date, thin divider, and habit dots
+- Weekly habit footer shows "×N/WEEK" (purple), infinite shows "ONGOING" (green), finite shows "X DAYS LEFT"
+
 ### UI Polish — Precision Dark Theme
 - **HabitCard redesign**: left habit-color accent bar (full height), streak number as hero (40sp monospace), dynamic pill badge — blue "XD LEFT" for finite habits, green "ONGOING" for infinite habits
 - **Today dot glow**: two concentric semi-transparent rings drawn behind today's dot in `DotGridCanvas` for immediate visual prominence
