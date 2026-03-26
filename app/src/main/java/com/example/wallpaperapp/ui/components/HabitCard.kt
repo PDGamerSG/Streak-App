@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -16,6 +15,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.remember
+import androidx.compose.ui.layout.IntrinsicMeasurable
+import androidx.compose.ui.layout.IntrinsicMeasureScope
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -207,20 +215,45 @@ fun HabitCard(
 
             Spacer(Modifier.height(10.dp))
 
-            // Dot grid — use BoxWithConstraints to derive height from actual canvas width,
-            // matching the spacing formula in DotGridCanvas exactly.
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val spacing = maxWidth / (dotsPerRow + (dotsPerRow - 1) * 0.5f) * 1.5f
-                val dotRadiusDp = spacing / 3f
-                val canvasHeight = spacing * dotRows + dotRadiusDp
-                DotGridCanvas(
-                    dots = dots,
-                    dotsPerRow = dotsPerRow,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(canvasHeight)
-                )
+            // Dot grid — custom Layout so intrinsic height queries work inside
+            // the IntrinsicSize.Min Row (BoxWithConstraints is SubcomposeLayout and
+            // cannot answer intrinsic height queries, causing a crash).
+            val policy = remember(dotsPerRow, dotRows) {
+                object : MeasurePolicy {
+                    private fun computeHeight(widthPx: Int): Int {
+                        if (widthPx == 0) return 0
+                        val spacing = widthPx / (dotsPerRow + (dotsPerRow - 1) * 0.5f) * 1.5f
+                        return (spacing * dotRows + spacing / 3f).roundToInt()
+                    }
+                    override fun MeasureScope.measure(
+                        measurables: List<androidx.compose.ui.layout.Measurable>,
+                        constraints: Constraints
+                    ): MeasureResult {
+                        val w = constraints.maxWidth
+                        val h = computeHeight(w)
+                        val p = measurables[0].measure(
+                            constraints.copy(minHeight = h, maxHeight = h)
+                        )
+                        return layout(w, h) { p.place(0, 0) }
+                    }
+                    override fun IntrinsicMeasureScope.minIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>, width: Int
+                    ) = computeHeight(width)
+                    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>, width: Int
+                    ) = computeHeight(width)
+                }
             }
+            Layout(
+                content = {
+                    DotGridCanvas(
+                        dots = dots,
+                        dotsPerRow = dotsPerRow,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                measurePolicy = policy
+            )
         }
     }
 }
