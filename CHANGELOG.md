@@ -8,6 +8,13 @@
 
 ## Features & Fixes (in order of implementation)
 
+### UI Polish — Precision Dark Theme
+- **HabitCard redesign**: left habit-color accent bar (full height), streak number as hero (40sp monospace), dynamic pill badge — blue "XD LEFT" for finite habits, green "ONGOING" for infinite habits
+- **Today dot glow**: two concentric semi-transparent rings drawn behind today's dot in `DotGridCanvas` for immediate visual prominence
+- **HomeScreen header**: "DOTSTREAK" in monospace with wide letter-spacing; today's full date shown below in dim secondary style
+- **Check In CTA**: replaced text button with full-width orange `Button` at bottom of Home screen
+- **CheckInBottomSheet**: matching left accent bars on habit rows, ✓/✗ symbol buttons with color state feedback, orange DONE button
+
 ### Base App
 - Habit tracking with dot-grid visualization
 - SQLite database via Room with `Habit` and `DayLog` models
