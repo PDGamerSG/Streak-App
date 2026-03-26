@@ -61,6 +61,7 @@ import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
 import com.example.wallpaperapp.ui.theme.HABIT_COLOR_PRESETS
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -206,6 +207,10 @@ fun AddEditHabitScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val reminderDisplay = if (uiState.reminderTime.isNotEmpty()) {
+                    val t = LocalTime.parse(uiState.reminderTime)
+                    t.format(DateTimeFormatter.ofPattern("h:mm a"))
+                } else ""
                 TextButton(
                     onClick = {
                         val (h, m) = if (uiState.reminderTime.isNotEmpty())
@@ -213,15 +218,14 @@ fun AddEditHabitScreen(
                         else listOf(8, 0)
                         TimePickerDialog(context, { _, hour, minute ->
                             viewModel.onReminderTimeChange("%02d:%02d".format(hour, minute))
-                        }, h, m, true).show()
+                        }, h, m, false).show()
                     },
                     modifier = Modifier
                         .background(DotStreakCard, RoundedCornerShape(8.dp))
                 ) {
                     Text(
-                        text = if (uiState.reminderTime.isNotEmpty())
-                            "⏰ ${uiState.reminderTime}" else "Set Reminder",
-                        color = if (uiState.reminderTime.isNotEmpty()) DotStreakAccent else DotStreakSecondaryText
+                        text = if (reminderDisplay.isNotEmpty()) "⏰ $reminderDisplay" else "Set Reminder",
+                        color = if (reminderDisplay.isNotEmpty()) DotStreakAccent else DotStreakSecondaryText
                     )
                 }
                 if (uiState.reminderTime.isNotEmpty()) {
