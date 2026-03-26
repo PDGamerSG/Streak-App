@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.repository.HabitRepository
 import com.example.wallpaperapp.ui.components.parseColor
+import com.example.wallpaperapp.ui.theme.DotStreakAccent
 import com.example.wallpaperapp.ui.theme.DotStreakBackground
 import com.example.wallpaperapp.ui.theme.DotStreakCard
 import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
@@ -77,18 +82,21 @@ fun CheckInBottomSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Check In — ${LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, MMM d"))}",
+                text = "CHECK IN",
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+                fontWeight = FontWeight.Black,
+                fontSize = 15.sp,
+                letterSpacing = 2.sp,
+                fontFamily = FontFamily.Monospace
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                "How did you do today?",
-                color = DotStreakSecondaryText,
-                fontSize = 13.sp
+                LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
+                color = Color(0xFF555555),
+                fontSize = 11.sp,
+                letterSpacing = 0.2.sp
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(18.dp))
 
             if (uiState.isLoading) {
                 Text("Loading…", color = DotStreakSecondaryText)
@@ -117,9 +125,16 @@ fun CheckInBottomSheet(
             Button(
                 onClick = { dismiss() },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A2A2A))
+                colors = ButtonDefaults.buttonColors(containerColor = DotStreakAccent),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Done", color = Color.White)
+                Text(
+                    "DONE",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 13.sp
+                )
             }
         }
     }
@@ -135,62 +150,73 @@ private fun CheckInHabitRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(DotStreakBackground, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .height(IntrinsicSize.Min)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF111111))
     ) {
+        // Left accent bar
         Box(
             modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
+                .width(3.dp)
+                .fillMaxHeight()
                 .background(habitColor)
         )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = item.habit.name,
-            color = Color.White,
-            modifier = Modifier.weight(1f),
-            fontSize = 14.sp
-        )
-        Spacer(Modifier.width(8.dp))
-        // Done button
-        OutlinedButton(
-            onClick = { onMark(DayStatus.COMPLETED) },
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (item.todayStatus == DayStatus.COMPLETED)
-                    Color(0xFF27AE60).copy(alpha = 0.2f) else Color.Transparent
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                if (item.todayStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else Color(0xFF2A2A2A)
-            ),
-            modifier = Modifier.height(36.dp)
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "✓ Done",
-                color = if (item.todayStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else DotStreakSecondaryText,
-                fontSize = 12.sp
+                text = item.habit.name,
+                color = Color(0xFFCCCCCC),
+                modifier = Modifier.weight(1f),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
             )
-        }
-        Spacer(Modifier.width(6.dp))
-        // Missed button
-        OutlinedButton(
-            onClick = { onMark(DayStatus.MISSED) },
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (item.todayStatus == DayStatus.MISSED)
-                    Color(0xFFE74C3C).copy(alpha = 0.2f) else Color.Transparent
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                if (item.todayStatus == DayStatus.MISSED) Color(0xFFE74C3C) else Color(0xFF2A2A2A)
-            ),
-            modifier = Modifier.height(36.dp)
-        ) {
-            Text(
-                "✗ Miss",
-                color = if (item.todayStatus == DayStatus.MISSED) Color(0xFFE74C3C) else DotStreakSecondaryText,
-                fontSize = 12.sp
-            )
+            Spacer(Modifier.width(8.dp))
+            // Done button
+            OutlinedButton(
+                onClick = { onMark(DayStatus.COMPLETED) },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (item.todayStatus == DayStatus.COMPLETED)
+                        Color(0xFF27AE60).copy(alpha = 0.15f) else Color.Transparent
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (item.todayStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else Color(0xFF333333)
+                ),
+                modifier = Modifier.height(34.dp),
+                shape = RoundedCornerShape(7.dp)
+            ) {
+                Text(
+                    "✓",
+                    color = if (item.todayStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else Color(0xFF555555),
+                    fontSize = 13.sp
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            // Missed button
+            OutlinedButton(
+                onClick = { onMark(DayStatus.MISSED) },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (item.todayStatus == DayStatus.MISSED)
+                        Color(0xFFFF6B35).copy(alpha = 0.12f) else Color.Transparent
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (item.todayStatus == DayStatus.MISSED) Color(0xFFFF6B35) else Color(0xFF333333)
+                ),
+                modifier = Modifier.height(34.dp),
+                shape = RoundedCornerShape(7.dp)
+            ) {
+                Text(
+                    "✗",
+                    color = if (item.todayStatus == DayStatus.MISSED) Color(0xFFFF6B35) else Color(0xFF555555),
+                    fontSize = 13.sp
+                )
+            }
         }
     }
 }
