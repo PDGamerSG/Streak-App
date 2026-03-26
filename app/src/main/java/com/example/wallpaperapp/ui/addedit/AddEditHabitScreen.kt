@@ -4,6 +4,7 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,6 +137,86 @@ fun AddEditHabitScreen(
                 ),
                 singleLine = true
             )
+
+            // Frequency type
+            SectionLabel("Frequency")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                val freqBtnModifier = Modifier.weight(1f)
+                // Daily button
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.onWeeklyChange(false) },
+                    modifier = freqBtnModifier,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (!uiState.isWeekly) DotStreakAccent.copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor = if (!uiState.isWeekly) DotStreakAccent else DotStreakSecondaryText
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, if (!uiState.isWeekly) DotStreakAccent else Color(0xFF2A2A2A)
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text("Daily", fontWeight = if (!uiState.isWeekly) FontWeight.Bold else FontWeight.Normal)
+                }
+                // Weekly button
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.onWeeklyChange(true) },
+                    modifier = freqBtnModifier,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (uiState.isWeekly) Color(0xFF9B7FE8).copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor = if (uiState.isWeekly) Color(0xFF9B7FE8) else DotStreakSecondaryText
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, if (uiState.isWeekly) Color(0xFF9B7FE8) else Color(0xFF2A2A2A)
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text("Weekly", fontWeight = if (uiState.isWeekly) FontWeight.Bold else FontWeight.Normal)
+                }
+            }
+
+            // Weekly target picker (only shown for weekly habits)
+            if (uiState.isWeekly) {
+                SectionLabel("Days per week target")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    (1..7).forEach { n ->
+                        val selected = uiState.weeklyTarget == n
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(
+                                    if (selected) Color(0xFF9B7FE8)
+                                    else Color(0xFF1E1E1E)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (selected) Color(0xFF9B7FE8) else Color(0xFF2A2A2A),
+                                    androidx.compose.foundation.shape.CircleShape
+                                )
+                                .clickable { viewModel.onWeeklyTargetChange(n) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$n",
+                                color = if (selected) Color.White else DotStreakSecondaryText,
+                                fontSize = 14.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+                Text(
+                    "Streak counts as 1 when you hit ${uiState.weeklyTarget}+ days this week",
+                    color = DotStreakSecondaryText,
+                    fontSize = 11.sp
+                )
+            }
 
             // Start date
             SectionLabel("Start Date")
