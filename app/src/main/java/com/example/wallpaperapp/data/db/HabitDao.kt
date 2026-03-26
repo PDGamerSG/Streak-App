@@ -47,11 +47,7 @@ class HabitDao(private val db: AppDatabase) {
         val cursor = db.helper.readableDatabase.query(
             "habits", null, null, null, null, null, "id ASC"
         )
-        return cursor.use { c ->
-            buildList {
-                while (c.moveToNext()) add(c.toHabit())
-            }
-        }
+        return cursor.use { c -> buildList { while (c.moveToNext()) add(c.toHabit()) } }
     }
 
     private fun queryById(id: Long): Habit? {
@@ -68,6 +64,8 @@ class HabitDao(private val db: AppDatabase) {
         put("color", color)
         put("reminderTime", reminderTime)
         put("streakOffset", streakOffset)
+        put("frequencyType", frequencyType)
+        put("weeklyTarget", weeklyTarget)
     }
 
     private fun android.database.Cursor.toHabit() = Habit(
@@ -77,6 +75,8 @@ class HabitDao(private val db: AppDatabase) {
         endDate = LocalDate.parse(getString(getColumnIndexOrThrow("endDate"))),
         color = getString(getColumnIndexOrThrow("color")),
         reminderTime = getString(getColumnIndexOrThrow("reminderTime")),
-        streakOffset = getInt(getColumnIndexOrThrow("streakOffset"))
+        streakOffset = getInt(getColumnIndexOrThrow("streakOffset")),
+        frequencyType = getString(getColumnIndexOrThrow("frequencyType")),
+        weeklyTarget = getInt(getColumnIndexOrThrow("weeklyTarget"))
     )
 }
