@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.wallpaperapp.data.model.Habit
+import com.example.wallpaperapp.data.model.INFINITE_END_DATE
 import com.example.wallpaperapp.data.repository.HabitRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ data class AddEditUiState(
     val name: String = "",
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now().plusDays(30),
+    val isInfinite: Boolean = false,
     val selectedColor: String = "#4A90D9",
     val reminderTime: String = "",
     val nameError: String? = null,
@@ -45,6 +47,7 @@ class AddEditHabitViewModel(
                 name = habit.name,
                 startDate = habit.startDate,
                 endDate = habit.endDate,
+                isInfinite = habit.isInfinite,
                 selectedColor = habit.color,
                 reminderTime = habit.reminderTime,
                 isEditMode = true
@@ -57,11 +60,19 @@ class AddEditHabitViewModel(
     }
 
     fun onStartDateChange(date: LocalDate) {
-        _uiState.value = _uiState.value.copy(startDate = date, dateError = null)
+        val state = _uiState.value
+        // For new habits (not edit mode), keep end date 30 days ahead of start date
+        val newEndDate = if (!state.isEditMode && !state.isInfinite)
+            date.plusDays(30) else state.endDate
+        _uiState.value = state.copy(startDate = date, endDate = newEndDate, dateError = null)
     }
 
     fun onEndDateChange(date: LocalDate) {
         _uiState.value = _uiState.value.copy(endDate = date, dateError = null)
+    }
+
+    fun onInfiniteChange(infinite: Boolean) {
+        _uiState.value = _uiState.value.copy(isInfinite = infinite, dateError = null)
     }
 
     fun onColorChange(hex: String) {
@@ -81,7 +92,7 @@ class AddEditHabitViewModel(
             _uiState.value = _uiState.value.copy(nameError = "Habit name is required")
             hasError = true
         }
-        if (!state.endDate.isAfter(state.startDate)) {
+        if (!state.isInfinite && !state.endDate.isAfter(state.startDate)) {
             _uiState.value = _uiState.value.copy(dateError = "End date must be after start date")
             hasError = true
         }
@@ -94,7 +105,7 @@ class AddEditHabitViewModel(
                 id = if (habitId > 0) habitId else 0L,
                 name = state.name.trim(),
                 startDate = state.startDate,
-                endDate = state.endDate,
+                endDate = if (state.isInfinite) INFINITE_END_DATE else state.endDate,
                 color = state.selectedColor,
                 reminderTime = state.reminderTime
             )

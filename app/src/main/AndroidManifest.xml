@@ -11,6 +11,9 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!-- Full-screen notification intent (popup over lock screen) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <!-- Reschedule alarms after device reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -48,6 +51,25 @@
         <receiver
             android:name=".notification.ReminderReceiver"
             android:exported="false" />
+
+        <!-- Handles Done / Skip taps from the reminder notification -->
+        <receiver
+            android:name=".notification.CheckInActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.wallpaperapp.ACTION_DONE" />
+                <action android:name="com.example.wallpaperapp.ACTION_SKIP" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Popup dialog shown over the lock screen when reminder fires -->
+        <activity
+            android:name=".notification.ReminderPopupActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
 
         <!-- Reschedule reminders after device reboot -->
         <receiver

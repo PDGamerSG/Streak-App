@@ -163,15 +163,17 @@ fun WallpaperPreviewScreen(
 
                         Spacer(Modifier.height(8.dp))
 
-                        Text(
-                            text = "${daysLeft} DAYS LEFT",
-                            color = Color(0xFF666666),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Light,
-                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            letterSpacing = 1.5.sp
-                        )
+                        if (!habit.isInfinite) {
+                            Text(
+                                text = "${daysLeft} DAYS LEFT",
+                                color = Color(0xFF666666),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Light,
+                                modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                letterSpacing = 1.5.sp
+                            )
+                        }
 
                         Spacer(Modifier.height(32.dp))
                     }

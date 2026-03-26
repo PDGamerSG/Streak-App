@@ -1,7 +1,6 @@
 package com.example.wallpaperapp.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -210,17 +208,18 @@ private fun HabitCardWithMenu(
             dots = habitStats.dots,
             streakResult = habitStats.streakResult,
             milestoneBadge = habitStats.milestoneBadge,
+            isInfinite = habitStats.habit.isInfinite,
             onEditStreak = { showStreakEdit = true },
-            modifier = Modifier.pointerInput(Unit) {
-                detectTapGestures(onLongPress = { showMenu = true })
-            }
+            onMoreClick = { showMenu = true }
         )
-        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(text = { Text("Edit") }, onClick = { showMenu = false; onEdit() })
-            DropdownMenuItem(
-                text = { Text("Delete", color = Color(0xFFE74C3C)) },
-                onClick = { showMenu = false; showDeleteConfirm = true }
-            )
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                DropdownMenuItem(text = { Text("Edit") }, onClick = { showMenu = false; onEdit() })
+                DropdownMenuItem(
+                    text = { Text("Delete", color = Color(0xFFE74C3C)) },
+                    onClick = { showMenu = false; showDeleteConfirm = true }
+                )
+            }
         }
     }
 

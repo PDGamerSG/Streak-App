@@ -39,6 +39,9 @@ class DayLogDao(private val db: AppDatabase) {
         db.triggerRefresh()
     }
 
+    suspend fun getAllLogsDirectForHabit(habitId: Long): List<DayLog> =
+        withContext(Dispatchers.IO) { queryForHabit(habitId) }
+
     private fun queryForHabit(habitId: Long): List<DayLog> {
         val cursor = db.helper.readableDatabase.query(
             "day_logs", null, "habitId=?", arrayOf(habitId.toString()),

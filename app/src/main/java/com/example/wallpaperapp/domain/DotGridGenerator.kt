@@ -36,10 +36,13 @@ object DotGridGenerator {
             when {
                 date.isBefore(habit.startDate) || date.isAfter(habit.endDate) ->
                     DotState(colorHex = COLOR_FUTURE, isVisible = false)   // blank slot, preserves grid shape
-                date == today ->
-                    DotState(colorHex = COLOR_TODAY, isToday = true)
                 date.isAfter(today) ->
                     DotState(colorHex = COLOR_FUTURE)                      // gray, visible
+                date == today -> when (logMap[date]) {
+                    DayStatus.MISSED    -> DotState(colorHex = COLOR_MISSED, isToday = true)
+                    DayStatus.COMPLETED -> DotState(colorHex = COLOR_TODAY, isToday = true)
+                    else                -> DotState(colorHex = COLOR_TODAY, isToday = true) // not logged yet
+                }
                 logMap[date] == DayStatus.COMPLETED ->
                     DotState(colorHex = COLOR_TODAY)
                 else ->

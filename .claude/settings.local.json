@@ -5,5 +5,8 @@
       "Bash(./gradlew assembleDebug)",
       "Bash(./gradlew compileDebugKotlin)"
     ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true
   }
 }

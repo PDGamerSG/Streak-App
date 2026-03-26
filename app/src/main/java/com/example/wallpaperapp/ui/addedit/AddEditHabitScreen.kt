@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -141,14 +143,42 @@ fun AddEditHabitScreen(
                 onClick = { showStartDatePicker = true }
             )
 
-            // End date
-            SectionLabel("End Date")
-            DateFieldButton(
-                label = uiState.endDate.format(dateFormatter),
-                onClick = { showEndDatePicker = true }
-            )
-            uiState.dateError?.let {
-                Text(it, color = Color(0xFFE74C3C), fontSize = 12.sp)
+            // Ongoing toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Ongoing habit", color = Color.White, fontSize = 14.sp)
+                    Text(
+                        "No end date — goes on forever",
+                        color = DotStreakSecondaryText,
+                        fontSize = 11.sp
+                    )
+                }
+                Switch(
+                    checked = uiState.isInfinite,
+                    onCheckedChange = viewModel::onInfiniteChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = DotStreakAccent,
+                        uncheckedThumbColor = DotStreakSecondaryText,
+                        uncheckedTrackColor = DotStreakCard
+                    )
+                )
+            }
+
+            // End date — hidden for ongoing habits
+            if (!uiState.isInfinite) {
+                SectionLabel("End Date")
+                DateFieldButton(
+                    label = uiState.endDate.format(dateFormatter),
+                    onClick = { showEndDatePicker = true }
+                )
+                uiState.dateError?.let {
+                    Text(it, color = Color(0xFFE74C3C), fontSize = 12.sp)
+                }
             }
 
             // Color picker

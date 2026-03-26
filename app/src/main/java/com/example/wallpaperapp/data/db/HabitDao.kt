@@ -40,6 +40,9 @@ class HabitDao(private val db: AppDatabase) {
         db.triggerRefresh()
     }
 
+    suspend fun getAllHabitsDirect(): List<Habit> =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queryAll() }
+
     private fun queryAll(): List<Habit> {
         val cursor = db.helper.readableDatabase.query(
             "habits", null, null, null, null, null, "id ASC"

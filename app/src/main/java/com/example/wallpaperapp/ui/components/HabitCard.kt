@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -38,7 +39,9 @@ fun HabitCard(
     dots: List<DotState>,
     streakResult: StreakResult,
     milestoneBadge: Int?,
+    isInfinite: Boolean = false,
     onEditStreak: () -> Unit = {},
+    onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val habitColor = parseColor(color)
@@ -91,19 +94,30 @@ fun HabitCard(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "\uD83D\uDD25 ${streakResult.currentStreak} day streak",
+                        text = "\uD83D\uDD25 ${streakResult.currentStreak}d",
                         color = DotStreakSecondaryText,
                         fontSize = 12.sp
                     )
                     IconButton(
                         onClick = onEditStreak,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             Icons.Filled.Edit,
                             contentDescription = "Edit streak",
                             tint = DotStreakSecondaryText,
                             modifier = Modifier.size(12.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onMoreClick,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "More options",
+                            tint = DotStreakSecondaryText,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -124,11 +138,13 @@ fun HabitCard(
             Spacer(Modifier.height(6.dp))
 
             // Stats row
-            Text(
-                text = "${streakResult.daysLeft}d left",
-                color = habitColor,
-                fontSize = 12.sp
-            )
+            if (!isInfinite) {
+                Text(
+                    text = "${streakResult.daysLeft}d left",
+                    color = habitColor,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ import android.provider.MediaStore
 import com.example.wallpaperapp.data.model.DayLog
 import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.model.Habit
+import com.example.wallpaperapp.data.model.INFINITE_END_DATE
 import com.example.wallpaperapp.domain.DotGridGenerator
 import com.example.wallpaperapp.domain.DotState
 import com.example.wallpaperapp.domain.StreakCalculator
@@ -42,41 +43,45 @@ object WallpaperExporter {
         val canvas = android.graphics.Canvas(bmp)
         canvas.drawColor(android.graphics.Color.parseColor(BG_COLOR))
 
+        // ── scale factor: shrink everything when 2+ habits ───────────────────
+        val habitCount = habits.size.coerceAtLeast(1)
+        val scale = if (habitCount >= 2) 0.62f else 1.0f
+
         // ── grid geometry ────────────────────────────────────────────────────
         val paddingH    = w * 0.10f
         val usableWidth = w - paddingH * 2
-        val cellSize    = usableWidth / DOTS_PER_ROW
-        val dotRadius   = cellSize * 0.28f          // slightly larger, closer-feeling dots
-        val gridStartX  = paddingH
+        val cellSize    = (usableWidth / DOTS_PER_ROW) * scale
+        val dotRadius   = cellSize * 0.28f
+        val gridStartX  = paddingH + (usableWidth - cellSize * DOTS_PER_ROW) / 2f
 
         // ── paints ───────────────────────────────────────────────────────────
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.WHITE
-            textSize      = h * 0.028f
+            textSize      = h * 0.022f * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.08f
+            letterSpacing = 0.10f
         }
         val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.parseColor(ACCENT_COLOR)
-            textSize      = h * 0.042f
+            textSize      = h * 0.036f * scale
             typeface      = Typeface.create("sans-serif-thin", Typeface.NORMAL)
             letterSpacing = 0.02f
         }
         val streakLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.parseColor("#888888")
-            textSize      = h * 0.016f
+            textSize      = h * 0.013f * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
             letterSpacing = 0.12f
         }
         val statsPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.parseColor("#666666")
-            textSize      = h * 0.016f
+            textSize      = h * 0.013f * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
             letterSpacing = 0.10f
         }
         val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color   = android.graphics.Color.parseColor(DIM_COLOR)
-            strokeWidth = 1.5f
+            strokeWidth = 1f
         }
         val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -115,16 +120,16 @@ object WallpaperExporter {
         if (sections.isEmpty()) return bmp
 
         // ── measure total content height for centering ───────────────────────
-        val habitGap  = h * 0.05f       // space between habit blocks
-        val lineH     = h * 0.012f      // general line gap
+        val habitGap  = h * 0.04f * scale   // space between habit blocks
+        val lineH     = h * 0.010f * scale  // general line gap
 
         fun sectionHeight(s: Section): Float =
-            namePaint.textSize      + lineH * 1.2f +    // habit name
-            streakPaint.textSize    + lineH * 0.4f +    // big streak number
+            namePaint.textSize        + lineH * 1.2f +  // habit name
+            streakPaint.textSize      + lineH * 0.4f +  // big streak number
             streakLabelPaint.textSize + lineH * 1.8f +  // "DAY STREAK" label
-            s.rows * cellSize       +                   // dot grid
-            lineH * 1.2f            +                   // gap
-            statsPaint.textSize                         // "Xd left"
+            s.rows * cellSize         +                 // dot grid
+            lineH * 1.2f              +                 // gap
+            if (s.habit.isInfinite) 0f else statsPaint.textSize  // "Xd left"
 
         val totalH = sections.sumOf { sectionHeight(it).toDouble() }.toFloat() +
                      (sections.size - 1) * habitGap
@@ -152,7 +157,7 @@ object WallpaperExporter {
             canvas.drawText(streakLabelText, streakLabelX, y + streakLabelPaint.textSize, streakLabelPaint)
             y += streakLabelPaint.textSize + lineH * 1.8f
 
-            // Dot grid — each row aligns to cellSize
+            // Dot grid — centred horizontally
             s.dots.forEachIndexed { index, dot ->
                 val col = index % DOTS_PER_ROW
                 val row = index / DOTS_PER_ROW
@@ -165,11 +170,13 @@ object WallpaperExporter {
             }
             y += s.rows * cellSize + lineH * 1.8f
 
-            // Stats — centred, subdued
-            val statsText = "${s.daysLeft} DAYS LEFT"
-            val statsX    = (w - statsPaint.measureText(statsText)) / 2f
-            canvas.drawText(statsText, statsX, y + statsPaint.textSize, statsPaint)
-            y += statsPaint.textSize
+            // Stats — centred, subdued (skip for infinite/ongoing habits)
+            if (!s.habit.isInfinite) {
+                val statsText = "${s.daysLeft} DAYS LEFT"
+                val statsX    = (w - statsPaint.measureText(statsText)) / 2f
+                canvas.drawText(statsText, statsX, y + statsPaint.textSize, statsPaint)
+                y += statsPaint.textSize
+            }
 
             // Divider between habits (skip after last)
             if (i < sections.size - 1) {
