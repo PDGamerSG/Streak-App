@@ -44,16 +44,22 @@ object WallpaperExporter {
         val canvas = android.graphics.Canvas(bmp)
         canvas.drawColor(android.graphics.Color.parseColor(BG_COLOR))
 
-        // ── scale factor: shrink everything when 2+ habits ───────────────────
+        // ── scale factor: shrinks with more habits ────────────────────────────
         val habitCount = habits.size.coerceAtLeast(1)
-        val scale = if (habitCount >= 2) 0.62f else 1.0f
+        val scale = when (habitCount) {
+            1    -> 1.00f
+            2    -> 0.62f
+            else -> 0.50f   // 3+ habits
+        }
+        val minTopFraction = when (habitCount) {
+            1    -> 0.30f
+            2    -> 0.25f
+            else -> 0.08f   // allow content to start near the top on 3+ habits
+        }
 
         // ── grid geometry ────────────────────────────────────────────────────
-        val paddingH    = w * 0.10f
+        val paddingH    = w * (if (habitCount >= 3) 0.07f else 0.10f)
         val usableWidth = w - paddingH * 2
-        val cellSize    = (usableWidth / DOTS_PER_ROW) * scale
-        val dotRadius   = cellSize * 0.28f
-        val gridStartX  = paddingH + (usableWidth - cellSize * DOTS_PER_ROW) / 2f
 
         // ── paints ───────────────────────────────────────────────────────────
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -143,7 +149,7 @@ object WallpaperExporter {
                      (sections.size - 1) * habitGap
 
         // True vertical centre
-        var y = ((h - totalH) / 2f).coerceAtLeast(h * 0.30f)
+        var y = ((h - totalH) / 2f).coerceAtLeast(h * minTopFraction)
 
         // ── draw sections ────────────────────────────────────────────────────
         sections.forEachIndexed { i, s ->

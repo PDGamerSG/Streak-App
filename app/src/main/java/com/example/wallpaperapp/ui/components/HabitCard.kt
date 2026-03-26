@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -206,14 +207,20 @@ fun HabitCard(
 
             Spacer(Modifier.height(10.dp))
 
-            // Dot grid
-            DotGridCanvas(
-                dots = dots,
-                dotsPerRow = dotsPerRow,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height((dotRows * 22).dp)
-            )
+            // Dot grid — use BoxWithConstraints to derive height from actual canvas width,
+            // matching the spacing formula in DotGridCanvas exactly.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val spacing = maxWidth / (dotsPerRow + (dotsPerRow - 1) * 0.5f) * 1.5f
+                val dotRadiusDp = spacing / 3f
+                val canvasHeight = spacing * dotRows + dotRadiusDp
+                DotGridCanvas(
+                    dots = dots,
+                    dotsPerRow = dotsPerRow,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(canvasHeight)
+                )
+            }
         }
     }
 }
