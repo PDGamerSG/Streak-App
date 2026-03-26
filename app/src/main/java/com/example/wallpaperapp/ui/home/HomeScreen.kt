@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,10 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import com.example.wallpaperapp.ui.checkin.CheckInBottomSheet
 import com.example.wallpaperapp.ui.components.HabitCard
 import com.example.wallpaperapp.ui.components.MilestoneOverlay
@@ -66,19 +71,30 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "DotStreak",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "DOTSTREAK",
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp,
+                            letterSpacing = 2.8.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
+                            color = Color(0xFF555555),
+                            fontSize = 10.sp,
+                            letterSpacing = 0.2.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
                 },
                 actions = {
                     IconButton(onClick = onOpenPreview) {
                         Icon(
                             Icons.Filled.Wallpaper,
                             contentDescription = "Export Wallpaper",
-                            tint = Color.White
+                            tint = Color(0xFF666666)
                         )
                     }
                 },
@@ -90,9 +106,10 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddHabit,
-                containerColor = DotStreakAccent
+                containerColor = Color(0xFF1E1E1E),
+                contentColor = Color.White
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Habit", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = "Add Habit", tint = Color(0xFFAAAAAA))
             }
         },
         bottomBar = {
@@ -100,14 +117,20 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(DotStreakBackground)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
-                TextButton(onClick = { viewModel.showCheckIn() }) {
+                Button(
+                    onClick = { viewModel.showCheckIn() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = DotStreakAccent),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text(
-                        text = "✓ Check In Today",
-                        color = DotStreakAccent,
-                        fontWeight = FontWeight.SemiBold
+                        text = "CHECK IN TODAY",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 13.sp
                     )
                 }
             }
@@ -130,11 +153,30 @@ fun HomeScreen(
                         .background(DotStreakBackground),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "No habits yet.\nTap + to add one!",
-                        color = DotStreakSecondaryText,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "● ● ●",
+                            color = Color(0xFF2A2A2A),
+                            fontSize = 28.sp,
+                            letterSpacing = 8.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "NO HABITS YET",
+                            color = Color(0xFF444444),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 2.sp
+                        )
+                        Text(
+                            "Tap + to start tracking",
+                            color = Color(0xFF333333),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
