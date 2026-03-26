@@ -49,6 +49,11 @@ object StreakCalculator {
             }
         }
 
+        // Only carry the previous-month offset if the streak is unbroken all the
+        // way back to the 1st of the current month (cursor walked past month start).
+        val monthStart = today.withDayOfMonth(1)
+        val effectiveOffset = if (cursor < monthStart) habit.streakOffset else 0
+
         // Best streak: walk entire range
         var bestStreak = 0
         var running = 0
@@ -65,7 +70,7 @@ object StreakCalculator {
         bestStreak = maxOf(bestStreak, currentStreak)
 
         return StreakResult(
-            currentStreak = currentStreak + habit.streakOffset,
+            currentStreak = currentStreak + effectiveOffset,
             bestStreak = bestStreak,
             completionPercent = completionPercent,
             daysLeft = daysLeft,
