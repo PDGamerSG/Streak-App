@@ -40,6 +40,7 @@ import com.example.wallpaperapp.ui.components.parseColor
 import com.example.wallpaperapp.ui.theme.DotStreakBackground
 import com.example.wallpaperapp.ui.theme.DotStreakCard
 import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -51,7 +52,8 @@ fun CheckInBottomSheet(
     onDismiss: () -> Unit,
     onMilestoneReached: (Long, Int) -> Unit
 ) {
-    val vm: CheckInViewModel = viewModel(factory = CheckInViewModel.factory(repository))
+    val context = LocalContext.current
+    val vm: CheckInViewModel = viewModel(factory = CheckInViewModel.factory(repository, context))
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()

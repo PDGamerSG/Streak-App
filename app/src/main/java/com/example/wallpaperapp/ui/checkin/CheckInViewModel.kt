@@ -1,5 +1,6 @@
 package com.example.wallpaperapp.ui.checkin
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -8,9 +9,9 @@ import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.repository.HabitRepository
 import com.example.wallpaperapp.domain.StreakCalculator
+import com.example.wallpaperapp.notification.HabitCheckInHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -26,7 +27,10 @@ data class CheckInUiState(
     val isLoading: Boolean = true
 )
 
-class CheckInViewModel(private val repository: HabitRepository) : ViewModel() {
+class CheckInViewModel(
+    private val repository: HabitRepository,
+    private val appContext: Context
+) : ViewModel() {
     private val today = LocalDate.now()
     private val _uiState = MutableStateFlow(CheckInUiState())
     val uiState: StateFlow<CheckInUiState> = _uiState
@@ -68,6 +72,9 @@ class CheckInViewModel(private val repository: HabitRepository) : ViewModel() {
                 DayLog(habitId = habitId, date = today, status = status)
             )
 
+            // Auto-update lock screen wallpaper
+            HabitCheckInHelper.autoUpdateWallpaper(appContext)
+
             // Recalculate
             val logs = repository.getLogsForHabit(habitId).first()
             val streakResult = StreakCalculator.calculate(currentItem.habit, logs, today)
@@ -91,10 +98,10 @@ class CheckInViewModel(private val repository: HabitRepository) : ViewModel() {
     }
 
     companion object {
-        fun factory(repository: HabitRepository) = object : ViewModelProvider.Factory {
+        fun factory(repository: HabitRepository, context: Context) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                CheckInViewModel(repository) as T
+                CheckInViewModel(repository, context.applicationContext) as T
         }
     }
 }
