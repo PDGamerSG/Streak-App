@@ -24,8 +24,7 @@ import kotlin.math.ceil
 
 object WallpaperExporter {
 
-    private const val DOTS_PER_ROW         = DotGridGenerator.WALLPAPER_DOTS_PER_ROW  // 7
-    private const val WEEKLY_DOTS_PER_ROW  = DotGridGenerator.WEEKLY_DOTS_PER_ROW     // 4
+    private const val DOTS_PER_ROW  = DotGridGenerator.WALLPAPER_DOTS_PER_ROW  // 7
     private const val BG_COLOR      = "#0D0D0D"
     private const val ACCENT_COLOR  = "#FF6B35"
     private const val DIM_COLOR     = "#444444"    // divider / month label
@@ -110,11 +109,9 @@ object WallpaperExporter {
 
         val sections = habits.mapNotNull { habit ->
             val logs = allLogs[habit.id] ?: emptyList()
-            val dotsPerRowForHabit = if (habit.isWeekly) WEEKLY_DOTS_PER_ROW else DOTS_PER_ROW
-            val dots = if (habit.isWeekly)
-                DotGridGenerator.generateWeekly(habit, logs, today)
-            else
-                DotGridGenerator.generate(habit, logs, today)
+            val dotsPerRowForHabit = DOTS_PER_ROW
+            // Use habit color for completed dots so each habit is visually distinct
+            val dots = DotGridGenerator.generate(habit, logs, today, completedColor = habit.color)
             if (dots.isEmpty()) return@mapNotNull null
 
             val rows = ceil(dots.size.toDouble() / dotsPerRowForHabit).toInt().coerceAtLeast(1)

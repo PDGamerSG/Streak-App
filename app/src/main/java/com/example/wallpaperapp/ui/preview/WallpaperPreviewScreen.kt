@@ -269,10 +269,7 @@ private fun PhoneMockup(uiState: PreviewUiState) {
                 ) {
                     uiState.habits.forEach { habitWithDots ->
                         val habit = habitWithDots.habit
-                        val dotsPerRow = if (habit.isWeekly)
-                            DotGridGenerator.WEEKLY_DOTS_PER_ROW
-                        else
-                            DotGridGenerator.WALLPAPER_DOTS_PER_ROW
+                        val dotsPerRow = DotGridGenerator.WALLPAPER_DOTS_PER_ROW
 
                         val daysLeft = YearMonth.of(today.year, today.month).lengthOfMonth() - today.dayOfMonth
 

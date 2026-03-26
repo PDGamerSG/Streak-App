@@ -24,11 +24,16 @@ object DotGridGenerator {
     const val COLOR_FUTURE = "#3A3A3A"
     const val COLOR_TODAY  = "#FFFFFF"
 
-    /** One dot per day of the current month. Outside habit range = invisible placeholder. */
+    /**
+     * One dot per day of the current month. Outside habit range = invisible placeholder.
+     * [completedColor] defaults to white; pass [habit.color] for wallpaper rendering so
+     * each habit's completed dots use its accent color.
+     */
     fun generate(
         habit: Habit,
         logs: List<DayLog>,
-        today: LocalDate = LocalDate.now()
+        today: LocalDate = LocalDate.now(),
+        completedColor: String = COLOR_TODAY
     ): List<DotState> {
         val monthStart  = today.withDayOfMonth(1)
         val daysInMonth = YearMonth.of(today.year, today.month).lengthOfMonth()
@@ -42,12 +47,12 @@ object DotGridGenerator {
                 date.isAfter(today) ->
                     DotState(colorHex = COLOR_FUTURE)
                 date == today -> when (logMap[date]) {
-                    DayStatus.MISSED    -> DotState(colorHex = COLOR_MISSED, isToday = true)
-                    DayStatus.COMPLETED -> DotState(colorHex = COLOR_TODAY,  isToday = true)
-                    else                -> DotState(colorHex = COLOR_TODAY,  isToday = true)
+                    DayStatus.MISSED    -> DotState(colorHex = COLOR_MISSED,    isToday = true)
+                    DayStatus.COMPLETED -> DotState(colorHex = completedColor,  isToday = true)
+                    else                -> DotState(colorHex = COLOR_TODAY,     isToday = true)
                 }
                 logMap[date] == DayStatus.COMPLETED ->
-                    DotState(colorHex = COLOR_TODAY)
+                    DotState(colorHex = completedColor)
                 else ->
                     DotState(colorHex = COLOR_MISSED)
             }

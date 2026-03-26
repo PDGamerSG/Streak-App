@@ -62,10 +62,7 @@ class HomeViewModel(private val repository: HabitRepository) : ViewModel() {
                         combine(logFlows) { pairs ->
                             val today = LocalDate.now()
                             pairs.map { (habit, logs) ->
-                                val dots = if (habit.isWeekly)
-                                    DotGridGenerator.generateWeekly(habit, logs, today)
-                                else
-                                    DotGridGenerator.generate(habit, logs, today)
+                                val dots = DotGridGenerator.generate(habit, logs, today)
                                 val streakResult = StreakCalculator.calculate(habit, logs, today)
                                 HabitWithStats(habit = habit, dots = dots, streakResult = streakResult)
                             }

@@ -60,7 +60,7 @@ fun HabitCard(
     modifier: Modifier = Modifier
 ) {
     val habitColor = parseColor(color)
-    val dotsPerRow = if (isWeekly) DotGridGenerator.WEEKLY_DOTS_PER_ROW else DotGridGenerator.DOTS_PER_ROW
+    val dotsPerRow = DotGridGenerator.DOTS_PER_ROW
     val dotRows = ceil(dots.size.toDouble() / dotsPerRow).toInt().coerceAtLeast(1)
 
     Row(

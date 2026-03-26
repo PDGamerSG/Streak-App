@@ -58,10 +58,7 @@ class WallpaperPreviewViewModel(private val repository: HabitRepository) : ViewM
                         val flows = habits.map { habit ->
                             repository.getLogsForHabit(habit.id).map { logs ->
                                 val today = LocalDate.now()
-                                val dots = if (habit.isWeekly)
-                                    DotGridGenerator.generateWeekly(habit, logs, today)
-                                else
-                                    DotGridGenerator.generate(habit, logs, today)
+                                val dots = DotGridGenerator.generate(habit, logs, today)
                                 HabitWithDots(
                                     habit = habit,
                                     dots = dots,
