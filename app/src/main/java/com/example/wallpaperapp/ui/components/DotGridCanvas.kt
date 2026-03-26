@@ -29,7 +29,14 @@ fun DotGridCanvas(
             val center = Offset(cx, cy)
             val color = parseColor(dot.colorHex)
 
-            if (dot.isVisible) drawCircle(color = color, radius = dotRadius, center = center)
+            if (dot.isVisible) {
+                // Glow rings for today's dot
+                if (dot.isToday) {
+                    drawCircle(color = color.copy(alpha = 0.07f), radius = dotRadius * 3.2f, center = center)
+                    drawCircle(color = color.copy(alpha = 0.18f), radius = dotRadius * 1.9f, center = center)
+                }
+                drawCircle(color = color, radius = dotRadius, center = center)
+            }
         }
     }
 }
