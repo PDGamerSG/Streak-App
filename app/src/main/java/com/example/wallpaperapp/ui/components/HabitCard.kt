@@ -5,13 +5,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -24,13 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.wallpaperapp.domain.DotGridGenerator
 import com.example.wallpaperapp.domain.DotState
 import com.example.wallpaperapp.domain.StreakResult
-import com.example.wallpaperapp.ui.theme.DotStreakCard
-import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
+import com.example.wallpaperapp.ui.theme.DotStreakAccent
+import kotlin.math.ceil
 
 @Composable
 fun HabitCard(
@@ -45,79 +49,85 @@ fun HabitCard(
     modifier: Modifier = Modifier
 ) {
     val habitColor = parseColor(color)
+    val dotRows = ceil(dots.size.toDouble() / DotGridGenerator.DOTS_PER_ROW).toInt().coerceAtLeast(1)
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(12.dp))
-            .background(DotStreakCard)
-            .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(12.dp))
-            .padding(12.dp)
+            .background(Color(0xFF141414))
+            .border(1.dp, Color(0xFF252525), RoundedCornerShape(12.dp))
     ) {
-        Column {
-            // Header row: color dot + name + milestone badge + streak
+        // Left accent bar — habit color
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(habitColor)
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            // Header: name (uppercase, letter-spaced) + edit/more icons
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(habitColor)
-                    )
-                    Spacer(Modifier.size(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
                     Text(
-                        text = name,
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                        text = name.uppercase(),
+                        color = Color(0xFFBBBBBB),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.4.sp,
+                        maxLines = 1
                     )
                     if (milestoneBadge != null) {
-                        Spacer(Modifier.size(6.dp))
+                        Spacer(Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(habitColor.copy(alpha = 0.25f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(habitColor.copy(alpha = 0.2f))
+                                .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = "$milestoneBadge%",
                                 color = habitColor,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "\uD83D\uDD25 ${streakResult.currentStreak}d",
-                        color = DotStreakSecondaryText,
-                        fontSize = 12.sp
-                    )
                     IconButton(
                         onClick = onEditStreak,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     ) {
                         Icon(
                             Icons.Filled.Edit,
                             contentDescription = "Edit streak",
-                            tint = DotStreakSecondaryText,
-                            modifier = Modifier.size(12.dp)
+                            tint = Color(0xFF484848),
+                            modifier = Modifier.size(11.dp)
                         )
                     }
                     IconButton(
                         onClick = onMoreClick,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     ) {
                         Icon(
                             Icons.Filled.MoreVert,
                             contentDescription = "More options",
-                            tint = DotStreakSecondaryText,
-                            modifier = Modifier.size(16.dp)
+                            tint = Color(0xFF484848),
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
@@ -125,26 +135,73 @@ fun HabitCard(
 
             Spacer(Modifier.height(8.dp))
 
-            // Dot grid preview — height grows with number of rows
-            val dotRows = kotlin.math.ceil(dots.size.toDouble() / com.example.wallpaperapp.domain.DotGridGenerator.DOTS_PER_ROW)
-                .toInt().coerceAtLeast(1)
+            // Streak hero number + days-left pill on same row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "${streakResult.currentStreak}",
+                        color = DotStreakAccent,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        lineHeight = 40.sp
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "DAY\nSTREAK",
+                        color = Color(0xFF4A4A4A),
+                        fontSize = 8.sp,
+                        letterSpacing = 0.8.sp,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 10.sp,
+                        modifier = Modifier.padding(bottom = 5.dp)
+                    )
+                }
+
+                // Pill: "X D LEFT" or "ONGOING"
+                val pillBg: Color
+                val pillFg: Color
+                val pillText: String
+                if (isInfinite) {
+                    pillBg = Color(0xFF0D200D)
+                    pillFg = Color(0xFF3DAA55)
+                    pillText = "ONGOING"
+                } else {
+                    pillBg = Color(0xFF0D1828)
+                    pillFg = Color(0xFF4A90D9)
+                    pillText = "${streakResult.daysLeft}D LEFT"
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(pillBg)
+                        .border(1.dp, pillFg.copy(alpha = 0.35f), RoundedCornerShape(5.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = pillText,
+                        color = pillFg,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.8.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Dot grid
             DotGridCanvas(
                 dots = dots,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height((dotRows * 22).dp)
             )
-
-            Spacer(Modifier.height(6.dp))
-
-            // Stats row
-            if (!isInfinite) {
-                Text(
-                    text = "${streakResult.daysLeft}d left",
-                    color = habitColor,
-                    fontSize = 12.sp
-                )
-            }
         }
     }
 }
