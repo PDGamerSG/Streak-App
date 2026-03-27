@@ -318,6 +318,7 @@ private fun PhoneMockup(uiState: PreviewUiState) {
                         DotGridCanvas(
                             dots = habitWithDots.dots,
                             dotsPerRow = dotsPerRow,
+                            showGlow = false,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(canvasRatio)

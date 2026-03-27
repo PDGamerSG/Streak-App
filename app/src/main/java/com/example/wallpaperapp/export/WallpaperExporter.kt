@@ -44,7 +44,7 @@ object WallpaperExporter {
         canvas.drawColor(android.graphics.Color.parseColor(BG_COLOR))
 
         // ── layout constants ──────────────────────────────────────────────
-        val paddingH    = w * 0.08f
+        val paddingH    = w * 0.05f
         val usableWidth = w - paddingH * 2
 
         // ── pre-compute sections ──────────────────────────────────────────
@@ -92,9 +92,9 @@ object WallpaperExporter {
                         (sections.size - 1) * habitGapRef
 
         // Scale so total content fits in 88 % of screen height
-        val scale       = (h * 0.88f / totalHRef).coerceAtMost(1.0f)
+        val scale       = (h * 0.92f / totalHRef).coerceAtMost(1.0f)
         val dotCellSize = dotCellRef  * scale
-        val dotRadius   = dotCellSize * 0.36f   // larger than before (was 0.28)
+        val dotRadius   = dotCellSize * 0.42f
         val lineH       = lineHRef    * scale
         val habitGap    = habitGapRef * scale
 
@@ -128,7 +128,6 @@ object WallpaperExporter {
             strokeWidth = 1.5f
         }
         val dotPaint  = Paint(Paint.ANTI_ALIAS_FLAG)
-        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         // ── center content vertically ─────────────────────────────────────
         val totalH = totalHRef * scale
@@ -166,14 +165,6 @@ object WallpaperExporter {
                 if (dot.isVisible) {
                     val color = parseHexColor(dot.colorHex)
                     dotPaint.color = color
-                    // Glow rings for today's dot
-                    if (dot.isToday) {
-                        glowPaint.color = color
-                        glowPaint.alpha = 28
-                        canvas.drawCircle(cx, cy, dotRadius * 3.2f, glowPaint)
-                        glowPaint.alpha = 65
-                        canvas.drawCircle(cx, cy, dotRadius * 1.8f, glowPaint)
-                    }
                     canvas.drawCircle(cx, cy, dotRadius, dotPaint)
                 }
             }
