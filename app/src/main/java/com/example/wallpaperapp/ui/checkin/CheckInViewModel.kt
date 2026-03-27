@@ -10,15 +10,20 @@ import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.repository.HabitRepository
 import com.example.wallpaperapp.domain.StreakCalculator
 import com.example.wallpaperapp.notification.HabitCheckInHelper
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 data class HabitCheckInItem(
     val habit: Habit,
-    val todayStatus: DayStatus?,  // null = not yet logged
+    val todayStatus: DayStatus?,   // null = not yet logged
     val completionPercent: Float
 )
 
@@ -39,27 +44,34 @@ class CheckInViewModel(
         loadTodayItems()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadTodayItems() {
         viewModelScope.launch {
-            val habits = repository.getAllHabits().first()
-            val activeHabits = habits.filter { h ->
-                !today.isBefore(h.startDate) && !today.isAfter(h.endDate)
-            }
-            if (activeHabits.isEmpty()) {
-                _uiState.value = CheckInUiState(items = emptyList(), isLoading = false)
-                return@launch
-            }
-            val items = activeHabits.map { habit ->
-                val logs = repository.getLogsForHabit(habit.id).first()
-                val todayLog = logs.find { it.date == today }
-                val streakResult = StreakCalculator.calculate(habit, logs, today)
-                HabitCheckInItem(
-                    habit = habit,
-                    todayStatus = todayLog?.status,
-                    completionPercent = streakResult.completionPercent
-                )
-            }
-            _uiState.value = CheckInUiState(items = items, isLoading = false)
+            repository.getAllHabits()
+                .flatMapLatest { habits ->
+                    val active = habits.filter { h ->
+                        !today.isBefore(h.startDate) && !today.isAfter(h.endDate)
+                    }
+                    if (active.isEmpty()) {
+                        flowOf(emptyList<HabitCheckInItem>())
+                    } else {
+                        val flows = active.map { habit ->
+                            repository.getLogsForHabit(habit.id).map { logs ->
+                                val todayLog    = logs.find { it.date == today }
+                                val streakResult = StreakCalculator.calculate(habit, logs, today)
+                                HabitCheckInItem(
+                                    habit             = habit,
+                                    todayStatus       = todayLog?.status,
+                                    completionPercent = streakResult.completionPercent
+                                )
+                            }
+                        }
+                        combine(flows) { it.toList() }
+                    }
+                }
+                .collect { items ->
+                    _uiState.value = CheckInUiState(items = items, isLoading = false)
+                }
         }
     }
 
@@ -75,21 +87,11 @@ class CheckInViewModel(
             // Auto-update lock screen wallpaper
             HabitCheckInHelper.autoUpdateWallpaper(appContext)
 
-            // Recalculate
-            val logs = repository.getLogsForHabit(habitId).first()
+            // Recalculate for milestone check (reactive flow updates UI automatically)
+            val logs        = repository.getLogsForHabit(habitId).first()
             val streakResult = StreakCalculator.calculate(currentItem.habit, logs, today)
-            val newPct = streakResult.completionPercent
+            val newPct      = streakResult.completionPercent
 
-            // Update local state
-            _uiState.value = _uiState.value.copy(
-                items = _uiState.value.items.map { item ->
-                    if (item.habit.id == habitId)
-                        item.copy(todayStatus = status, completionPercent = newPct)
-                    else item
-                }
-            )
-
-            // Milestone check
             val milestone = StreakCalculator.checkMilestone(prevPct, newPct)
             if (milestone != null && status == DayStatus.COMPLETED) {
                 onMilestone(habitId, milestone)
