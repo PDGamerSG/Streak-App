@@ -253,11 +253,11 @@ private fun HabitCardWithMenu(
             isInfinite = habitStats.habit.isInfinite,
             isWeekly = habitStats.habit.isWeekly,
             weeklyTarget = habitStats.habit.weeklyTarget,
-            onEditStreak = { showStreakEdit = true },
             onMoreClick = { showMenu = true }
         )
         Box(modifier = Modifier.align(Alignment.TopEnd)) {
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                DropdownMenuItem(text = { Text("Edit Streak") }, onClick = { showMenu = false; showStreakEdit = true })
                 DropdownMenuItem(text = { Text("Edit") }, onClick = { showMenu = false; onEdit() })
                 DropdownMenuItem(
                     text = { Text("Delete", color = Color(0xFFE74C3C)) },

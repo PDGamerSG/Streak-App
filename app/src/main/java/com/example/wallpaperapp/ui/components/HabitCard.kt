@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.unit.Constraints
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,7 +54,6 @@ fun HabitCard(
     isInfinite: Boolean = false,
     isWeekly: Boolean = false,
     weeklyTarget: Int = 1,
-    onEditStreak: () -> Unit = {},
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -119,29 +117,16 @@ fun HabitCard(
                         }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onEditStreak,
-                        modifier = Modifier.size(26.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.Edit,
-                            contentDescription = "Edit streak",
-                            tint = Color(0xFF484848),
-                            modifier = Modifier.size(11.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onMoreClick,
-                        modifier = Modifier.size(26.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.MoreVert,
-                            contentDescription = "More options",
-                            tint = Color(0xFF484848),
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
+                IconButton(
+                    onClick = onMoreClick,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color(0xFF484848),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
 
@@ -249,6 +234,7 @@ fun HabitCard(
                     DotGridCanvas(
                         dots = dots,
                         dotsPerRow = dotsPerRow,
+                        showGlow = false,
                         modifier = Modifier.fillMaxWidth()
                     )
                 },

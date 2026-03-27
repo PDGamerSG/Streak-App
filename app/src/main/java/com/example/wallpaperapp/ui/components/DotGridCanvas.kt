@@ -13,7 +13,8 @@ import kotlin.math.ceil
 fun DotGridCanvas(
     dots: List<DotState>,
     modifier: Modifier = Modifier,
-    dotsPerRow: Int = DotGridGenerator.DOTS_PER_ROW
+    dotsPerRow: Int = DotGridGenerator.DOTS_PER_ROW,
+    showGlow: Boolean = true
 ) {
     Canvas(modifier = modifier) {
         if (dots.isEmpty()) return@Canvas
@@ -30,8 +31,7 @@ fun DotGridCanvas(
             val color = parseColor(dot.colorHex)
 
             if (dot.isVisible) {
-                // Glow rings for today's dot
-                if (dot.isToday) {
+                if (showGlow && dot.isToday) {
                     drawCircle(color = color.copy(alpha = 0.07f), radius = dotRadius * 3.2f, center = center)
                     drawCircle(color = color.copy(alpha = 0.18f), radius = dotRadius * 1.9f, center = center)
                 }
