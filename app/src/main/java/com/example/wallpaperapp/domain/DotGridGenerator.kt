@@ -43,7 +43,7 @@ object DotGridGenerator {
             val date = monthStart.plusDays(index.toLong())
             when {
                 date.isBefore(habit.startDate) || date.isAfter(habit.endDate) ->
-                    DotState(colorHex = COLOR_FUTURE, isVisible = false)
+                    DotState(colorHex = COLOR_FUTURE)
                 date.isAfter(today) ->
                     DotState(colorHex = COLOR_FUTURE)
                 date == today -> when (logMap[date]) {
