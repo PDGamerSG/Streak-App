@@ -24,10 +24,10 @@ import kotlin.math.ceil
 
 object WallpaperExporter {
 
-    private const val DOTS_PER_ROW  = DotGridGenerator.WALLPAPER_DOTS_PER_ROW  // 7
-    private const val BG_COLOR      = "#0D0D0D"
-    private const val ACCENT_COLOR  = "#FF6B35"
-    private const val DIM_COLOR     = "#444444"    // divider / month label
+    private const val DOTS_PER_ROW = DotGridGenerator.WALLPAPER_DOTS_PER_ROW  // 7
+    private const val BG_COLOR     = "#0D0D0D"
+    private const val ACCENT_COLOR = "#FF6B35"
+    private const val DIM_COLOR    = "#333333"
 
     fun renderBitmap(
         context: Context,
@@ -43,159 +43,154 @@ object WallpaperExporter {
         val canvas = android.graphics.Canvas(bmp)
         canvas.drawColor(android.graphics.Color.parseColor(BG_COLOR))
 
-        // ── scale factor: shrinks with more habits ────────────────────────────
-        val habitCount = habits.size.coerceAtLeast(1)
-        val scale = when (habitCount) {
-            1    -> 1.00f
-            2    -> 0.62f
-            else -> 0.50f   // 3+ habits
-        }
-        val minTopFraction = when (habitCount) {
-            1    -> 0.30f
-            2    -> 0.25f
-            else -> 0.08f   // allow content to start near the top on 3+ habits
-        }
-
-        // ── grid geometry ────────────────────────────────────────────────────
-        val paddingH    = w * (if (habitCount >= 3) 0.07f else 0.10f)
+        // ── layout constants ──────────────────────────────────────────────
+        val paddingH    = w * 0.08f
         val usableWidth = w - paddingH * 2
 
-        // ── paints ───────────────────────────────────────────────────────────
+        // ── pre-compute sections ──────────────────────────────────────────
+        data class Section(
+            val habit      : Habit,
+            val dots       : List<DotState>,
+            val rows       : Int,
+            val daysLeft   : Int,
+            val streak     : Int,
+            val dotsPerRow : Int
+        )
+
+        val monthStart  = today.withDayOfMonth(1)
+        val daysInMonth = YearMonth.of(today.year, today.month).lengthOfMonth()
+        val daysLeft    = daysInMonth - today.dayOfMonth
+
+        val sections = habits.mapNotNull { habit ->
+            val logs = allLogs[habit.id] ?: emptyList()
+            val dots = DotGridGenerator.generate(habit, logs, today, completedColor = habit.color)
+            if (dots.isEmpty()) return@mapNotNull null
+            val rows   = ceil(dots.size.toDouble() / DOTS_PER_ROW).toInt().coerceAtLeast(1)
+            val streak = StreakCalculator.calculate(habit, logs, today).currentStreak
+            Section(habit, dots, rows, daysLeft, streak, DOTS_PER_ROW)
+        }
+        if (sections.isEmpty()) return bmp
+
+        // ── dynamic scaling: full-size first, shrink only if needed ───────
+        //    Reference values are at scale = 1.0
+        val dotCellRef  = usableWidth / DOTS_PER_ROW
+        val lineHRef    = h * 0.010f
+        val habitGapRef = h * 0.042f
+        val nameRef     = h * 0.021f
+        val streakRef   = h * 0.058f
+        val labelRef    = h * 0.013f
+        val statsRef    = h * 0.012f
+
+        fun sectionHRef(s: Section): Float =
+            nameRef   + lineHRef * 1.2f +
+            streakRef + lineHRef * 0.4f +
+            labelRef  + lineHRef * 1.8f +
+            s.rows * dotCellRef + lineHRef * 1.2f +
+            if (s.habit.isInfinite) 0f else statsRef + lineHRef * 0.6f
+
+        val totalHRef = sections.sumOf { sectionHRef(it).toDouble() }.toFloat() +
+                        (sections.size - 1) * habitGapRef
+
+        // Scale so total content fits in 88 % of screen height
+        val scale       = (h * 0.88f / totalHRef).coerceAtMost(1.0f)
+        val dotCellSize = dotCellRef  * scale
+        val dotRadius   = dotCellSize * 0.36f   // larger than before (was 0.28)
+        val lineH       = lineHRef    * scale
+        val habitGap    = habitGapRef * scale
+
+        // ── paints ────────────────────────────────────────────────────────
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.WHITE
-            textSize      = h * 0.022f * scale
+            textSize      = nameRef * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.10f
+            letterSpacing = 0.12f
         }
         val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color         = android.graphics.Color.parseColor(ACCENT_COLOR)
-            textSize      = h * 0.036f * scale
+            textSize      = streakRef * scale
             typeface      = Typeface.create("sans-serif-thin", Typeface.NORMAL)
             letterSpacing = 0.02f
         }
         val streakLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color         = android.graphics.Color.parseColor("#888888")
-            textSize      = h * 0.013f * scale
+            color         = android.graphics.Color.parseColor("#777777")
+            textSize      = labelRef * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
-            letterSpacing = 0.12f
+            letterSpacing = 0.14f
         }
         val statsPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color         = android.graphics.Color.parseColor("#666666")
-            textSize      = h * 0.013f * scale
+            color         = android.graphics.Color.parseColor("#888888")
+            textSize      = statsRef * scale
             typeface      = Typeface.create("sans-serif-light", Typeface.NORMAL)
             letterSpacing = 0.10f
         }
         val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color   = android.graphics.Color.parseColor(DIM_COLOR)
-            strokeWidth = 1f
+            color       = android.graphics.Color.parseColor(DIM_COLOR)
+            strokeWidth = 1.5f
         }
-        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val dotPaint  = Paint(Paint.ANTI_ALIAS_FLAG)
+        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        // ── pre-compute sections ─────────────────────────────────────────────
-        data class Section(
-            val habit       : Habit,
-            val logs        : List<DayLog>,
-            val dots        : List<DotState>,
-            val rows        : Int,
-            val pct         : Int,
-            val daysLeft    : Int,
-            val streak      : Int,
-            val dotsPerRow  : Int
-        )
+        // ── center content vertically ─────────────────────────────────────
+        val totalH = totalHRef * scale
+        var y = ((h - totalH) / 2f).coerceIn(h * 0.06f, h * 0.40f)
 
-        val monthStart    = today.withDayOfMonth(1)
-        val daysInMonth   = YearMonth.of(today.year, today.month).lengthOfMonth()
-        val daysLeft      = daysInMonth - today.dayOfMonth
-
-        val sections = habits.mapNotNull { habit ->
-            val logs = allLogs[habit.id] ?: emptyList()
-            val dotsPerRowForHabit = DOTS_PER_ROW
-            // Use habit color for completed dots so each habit is visually distinct
-            val dots = DotGridGenerator.generate(habit, logs, today, completedColor = habit.color)
-            if (dots.isEmpty()) return@mapNotNull null
-
-            val rows = ceil(dots.size.toDouble() / dotsPerRowForHabit).toInt().coerceAtLeast(1)
-
-            // Percentage = completed this month / days passed in month
-            val completedThisMonth = logs.count { log ->
-                !log.date.isBefore(monthStart) && !log.date.isAfter(today) &&
-                log.status == DayStatus.COMPLETED
-            }
-            val pct = if (today.dayOfMonth > 0) completedThisMonth * 100 / today.dayOfMonth else 0
-
-            val streak = StreakCalculator.calculate(habit, logs, today).currentStreak
-            Section(habit, logs, dots, rows, pct, daysLeft, streak, dotsPerRowForHabit)
-        }
-        if (sections.isEmpty()) return bmp
-
-        // ── measure total content height for centering ───────────────────────
-        val habitGap  = h * 0.04f * scale   // space between habit blocks
-        val lineH     = h * 0.010f * scale  // general line gap
-
-        fun sectionHeight(s: Section): Float {
-            val sCellSize = (usableWidth / s.dotsPerRow) * scale
-            return namePaint.textSize        + lineH * 1.2f +
-                   streakPaint.textSize      + lineH * 0.4f +
-                   streakLabelPaint.textSize + lineH * 1.8f +
-                   s.rows * sCellSize        +
-                   lineH * 1.2f              +
-                   if (s.habit.isInfinite) 0f else statsPaint.textSize
-        }
-
-        val totalH = sections.sumOf { sectionHeight(it).toDouble() }.toFloat() +
-                     (sections.size - 1) * habitGap
-
-        // True vertical centre
-        var y = ((h - totalH) / 2f).coerceAtLeast(h * minTopFraction)
-
-        // ── draw sections ────────────────────────────────────────────────────
+        // ── draw sections ─────────────────────────────────────────────────
         sections.forEachIndexed { i, s ->
 
-            // Habit name — centred, light
+            // Habit name
             val nameText = s.habit.name.uppercase()
             val nameX = (w - namePaint.measureText(nameText)) / 2f
             canvas.drawText(nameText, nameX, y + namePaint.textSize, namePaint)
             y += namePaint.textSize + lineH * 1.2f
 
-            // Big streak number + "DAY STREAK" label — centred
-            val streakNumText = "${s.streak}"
-            val streakNumX = (w - streakPaint.measureText(streakNumText)) / 2f
-            canvas.drawText(streakNumText, streakNumX, y + streakPaint.textSize, streakPaint)
+            // Streak number
+            val streakText = "${s.streak}"
+            val streakX = (w - streakPaint.measureText(streakText)) / 2f
+            canvas.drawText(streakText, streakX, y + streakPaint.textSize, streakPaint)
             y += streakPaint.textSize + lineH * 0.4f
 
-            val streakLabelText = if (s.habit.isWeekly) "WEEK STREAK" else "DAY STREAK"
-            val streakLabelX = (w - streakLabelPaint.measureText(streakLabelText)) / 2f
-            canvas.drawText(streakLabelText, streakLabelX, y + streakLabelPaint.textSize, streakLabelPaint)
+            // Streak label
+            val labelText = if (s.habit.isWeekly) "WEEK STREAK" else "DAY STREAK"
+            val labelX = (w - streakLabelPaint.measureText(labelText)) / 2f
+            canvas.drawText(labelText, labelX, y + streakLabelPaint.textSize, streakLabelPaint)
             y += streakLabelPaint.textSize + lineH * 1.8f
 
-            // Dot grid — centred horizontally
-            val sectionCellSize = (usableWidth / s.dotsPerRow) * scale
-            val sectionGridStartX = paddingH + (usableWidth - sectionCellSize * s.dotsPerRow) / 2f
-            val sectionDotRadius = sectionCellSize * 0.28f
+            // Dot grid — centered in usable width
+            val gridW     = dotCellSize * s.dotsPerRow
+            val gridStartX = paddingH + (usableWidth - gridW) / 2f
             s.dots.forEachIndexed { index, dot ->
                 val col = index % s.dotsPerRow
                 val row = index / s.dotsPerRow
-                val cx  = sectionGridStartX + col * sectionCellSize + sectionCellSize / 2f
-                val cy  = y + row * sectionCellSize + sectionCellSize / 2f
+                val cx  = gridStartX + col * dotCellSize + dotCellSize / 2f
+                val cy  = y + row * dotCellSize + dotCellSize / 2f
                 if (dot.isVisible) {
-                    dotPaint.color = parseHexColor(dot.colorHex)
-                    canvas.drawCircle(cx, cy, sectionDotRadius, dotPaint)
+                    val color = parseHexColor(dot.colorHex)
+                    dotPaint.color = color
+                    // Glow rings for today's dot
+                    if (dot.isToday) {
+                        glowPaint.color = color
+                        glowPaint.alpha = 28
+                        canvas.drawCircle(cx, cy, dotRadius * 3.2f, glowPaint)
+                        glowPaint.alpha = 65
+                        canvas.drawCircle(cx, cy, dotRadius * 1.8f, glowPaint)
+                    }
+                    canvas.drawCircle(cx, cy, dotRadius, dotPaint)
                 }
             }
-            y += s.rows * sectionCellSize + lineH * 1.8f
+            y += s.rows * dotCellSize + lineH * 1.2f
 
-            // Stats — centred, subdued (skip for infinite/ongoing habits)
+            // Stats footer
             if (!s.habit.isInfinite) {
                 val statsText = "${s.daysLeft} DAYS LEFT"
-                val statsX    = (w - statsPaint.measureText(statsText)) / 2f
+                val statsX = (w - statsPaint.measureText(statsText)) / 2f
                 canvas.drawText(statsText, statsX, y + statsPaint.textSize, statsPaint)
-                y += statsPaint.textSize
+                y += statsPaint.textSize + lineH * 0.6f
             }
 
             // Divider between habits (skip after last)
             if (i < sections.size - 1) {
                 y += habitGap / 2f
-                canvas.drawLine(paddingH * 2, y, w - paddingH * 2, y, dividerPaint)
+                canvas.drawLine(paddingH, y, w - paddingH, y, dividerPaint)
                 y += habitGap / 2f
             }
         }
@@ -203,7 +198,7 @@ object WallpaperExporter {
         return bmp
     }
 
-    // ── save / set helpers ────────────────────────────────────────────────────
+    // ── save / set helpers ─────────────────────────────────────────────────
 
     suspend fun saveToGallery(context: Context, bitmap: Bitmap): Uri? {
         val fileName = "DotStreak_${System.currentTimeMillis()}.png"
