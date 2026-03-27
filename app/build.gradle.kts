@@ -12,6 +12,14 @@ val keystoreProps = Properties().also { props ->
     if (keystorePropsFile.exists()) props.load(keystorePropsFile.inputStream())
 }
 
+/** Returns true only when all four required signing properties are present and non-blank. */
+fun hasSigningConfig(): Boolean =
+    keystorePropsFile.exists() &&
+    keystoreProps.getProperty("storeFile").orEmpty().isNotBlank() &&
+    keystoreProps.getProperty("storePassword").orEmpty().isNotBlank() &&
+    keystoreProps.getProperty("keyAlias").orEmpty().isNotBlank() &&
+    keystoreProps.getProperty("keyPassword").orEmpty().isNotBlank()
+
 android {
     namespace = "com.example.wallpaperapp"
     compileSdk {
@@ -30,13 +38,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            if (keystorePropsFile.exists()) {
-                storeFile     = file(keystoreProps["storeFile"] as String)
-                storePassword = keystoreProps["storePassword"] as String
-                keyAlias      = keystoreProps["keyAlias"] as String
-                keyPassword   = keystoreProps["keyPassword"] as String
+    if (hasSigningConfig()) {
+        signingConfigs {
+            create("release") {
+                val rawPath = keystoreProps.getProperty("storeFile")
+                // Normalise Windows backslashes — Properties parser treats \ as escape char
+                val normPath = rawPath.replace("\\", "/")
+                storeFile     = file(normPath)
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias      = keystoreProps.getProperty("keyAlias")
+                keyPassword   = keystoreProps.getProperty("keyPassword")
+                // Auto-detect PKCS12 (.p12 / .pfx) vs legacy JKS
+                if (normPath.endsWith(".p12", ignoreCase = true) ||
+                    normPath.endsWith(".pfx", ignoreCase = true)) {
+                    storeType = "PKCS12"
+                }
             }
         }
     }
@@ -48,7 +64,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Only attach signing if keystore.properties is fully configured
+            if (hasSigningConfig()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
