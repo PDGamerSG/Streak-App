@@ -1,11 +1,13 @@
 package com.example.wallpaperapp.ui.addedit
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.model.INFINITE_END_DATE
 import com.example.wallpaperapp.data.repository.HabitRepository
+import com.example.wallpaperapp.notification.HabitCheckInHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -30,7 +32,8 @@ data class AddEditUiState(
 
 class AddEditHabitViewModel(
     private val repository: HabitRepository,
-    private val habitId: Long
+    private val habitId: Long,
+    private val appContext: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditUiState())
@@ -98,17 +101,18 @@ class AddEditHabitViewModel(
                 weeklyTarget = state.weeklyTarget
             )
             val savedId = repository.upsertHabit(habit)
+            HabitCheckInHelper.autoUpdateWallpaper(appContext)
             _uiState.value = _uiState.value.copy(isSaving = false, savedSuccessfully = true)
             onSaved(savedId)
         }
     }
 
     companion object {
-        fun factory(repository: HabitRepository, habitId: Long) =
+        fun factory(repository: HabitRepository, habitId: Long, appContext: Context) =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    AddEditHabitViewModel(repository, habitId) as T
+                    AddEditHabitViewModel(repository, habitId, appContext) as T
             }
     }
 }

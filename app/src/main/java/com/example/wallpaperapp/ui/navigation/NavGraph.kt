@@ -14,6 +14,7 @@ import com.example.wallpaperapp.ui.home.HomeScreen
 import com.example.wallpaperapp.ui.home.HomeViewModel
 import com.example.wallpaperapp.ui.preview.WallpaperPreviewScreen
 import com.example.wallpaperapp.ui.preview.WallpaperPreviewViewModel
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -29,10 +30,11 @@ object WallpaperPreviewRoute
 fun DotStreakNavGraph(database: AppDatabase) {
     val navController = rememberNavController()
     val repository = HabitRepository(database)
+    val appContext = LocalContext.current.applicationContext
 
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
-            val vm: HomeViewModel = viewModel(factory = HomeViewModel.factory(repository))
+            val vm: HomeViewModel = viewModel(factory = HomeViewModel.factory(repository, appContext))
             HomeScreen(
                 viewModel = vm,
                 repository = repository,
@@ -44,7 +46,7 @@ fun DotStreakNavGraph(database: AppDatabase) {
         composable<AddEditHabitRoute> { backStackEntry ->
             val route: AddEditHabitRoute = backStackEntry.toRoute()
             val vm: AddEditHabitViewModel = viewModel(
-                factory = AddEditHabitViewModel.factory(repository, route.habitId)
+                factory = AddEditHabitViewModel.factory(repository, route.habitId, appContext)
             )
             AddEditHabitScreen(
                 viewModel = vm,

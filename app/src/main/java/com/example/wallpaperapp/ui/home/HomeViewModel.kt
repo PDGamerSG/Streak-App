@@ -1,5 +1,6 @@
 package com.example.wallpaperapp.ui.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,6 +12,7 @@ import com.example.wallpaperapp.domain.DotGridGenerator
 import com.example.wallpaperapp.domain.DotState
 import com.example.wallpaperapp.domain.StreakCalculator
 import com.example.wallpaperapp.domain.StreakResult
+import com.example.wallpaperapp.notification.HabitCheckInHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +41,10 @@ data class HomeUiState(
     val isLoading: Boolean = true
 )
 
-class HomeViewModel(private val repository: HabitRepository) : ViewModel() {
+class HomeViewModel(
+    private val repository: HabitRepository,
+    private val appContext: Context
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
@@ -95,7 +100,10 @@ class HomeViewModel(private val repository: HabitRepository) : ViewModel() {
     }
 
     fun deleteHabit(habitId: Long) {
-        viewModelScope.launch { repository.deleteHabit(habitId) }
+        viewModelScope.launch {
+            repository.deleteHabit(habitId)
+            autoUpdateWallpaper()
+        }
     }
 
     /** Backfills the fromDay..toDay range as COMPLETED, earlier days as MISSED, sets prior offset.
@@ -118,14 +126,23 @@ class HomeViewModel(private val repository: HabitRepository) : ViewModel() {
             val newStartDate = if (firstCompletedDate.isBefore(habit.startDate))
                 firstCompletedDate else habit.startDate
             repository.upsertHabit(habit.copy(startDate = newStartDate, streakOffset = priorDays))
+            autoUpdateWallpaper()
+        }
+    }
+
+    private fun autoUpdateWallpaper() {
+        viewModelScope.launch {
+            try {
+                HabitCheckInHelper.autoUpdateWallpaper(appContext)
+            } catch (_: Exception) { /* silently skip if wallpaper permission not granted */ }
         }
     }
 
     companion object {
-        fun factory(repository: HabitRepository) = object : ViewModelProvider.Factory {
+        fun factory(repository: HabitRepository, appContext: Context) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                HomeViewModel(repository) as T
+                HomeViewModel(repository, appContext) as T
         }
     }
 }
