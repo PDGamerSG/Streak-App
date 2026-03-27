@@ -44,7 +44,12 @@ object WallpaperExporter {
         canvas.drawColor(android.graphics.Color.parseColor(BG_COLOR))
 
         // ── layout constants ──────────────────────────────────────────────
-        val paddingH    = w * 0.05f
+        // Reserve space for lock-screen clock (top) and shortcuts (bottom)
+        val topReserve    = h * 0.28f   // clock + date area
+        val bottomReserve = h * 0.15f   // shortcut icons + nav bar
+        val availableH    = h - topReserve - bottomReserve   // ~57 % of screen
+
+        val paddingH    = w * 0.14f     // wide side margins → narrower, smaller grid
         val usableWidth = w - paddingH * 2
 
         // ── pre-compute sections ──────────────────────────────────────────
@@ -71,15 +76,15 @@ object WallpaperExporter {
         }
         if (sections.isEmpty()) return bmp
 
-        // ── dynamic scaling: full-size first, shrink only if needed ───────
-        //    Reference values are at scale = 1.0
+        // ── dynamic scaling: fit content into the available zone ──────────
+        //    Reference values are at scale = 1.0  (medium-small baseline)
         val dotCellRef  = usableWidth / DOTS_PER_ROW
-        val lineHRef    = h * 0.010f
-        val habitGapRef = h * 0.042f
-        val nameRef     = h * 0.021f
-        val streakRef   = h * 0.058f
-        val labelRef    = h * 0.013f
-        val statsRef    = h * 0.012f
+        val lineHRef    = h * 0.008f
+        val habitGapRef = h * 0.025f
+        val nameRef     = h * 0.016f
+        val streakRef   = h * 0.040f
+        val labelRef    = h * 0.010f
+        val statsRef    = h * 0.010f
 
         fun sectionHRef(s: Section): Float =
             nameRef   + lineHRef * 1.2f +
@@ -91,10 +96,10 @@ object WallpaperExporter {
         val totalHRef = sections.sumOf { sectionHRef(it).toDouble() }.toFloat() +
                         (sections.size - 1) * habitGapRef
 
-        // Scale so total content fits in 88 % of screen height
-        val scale       = (h * 0.92f / totalHRef).coerceAtMost(1.0f)
+        // Shrink to fit availableH; never scale up beyond 1.0
+        val scale       = (availableH / totalHRef).coerceAtMost(1.0f)
         val dotCellSize = dotCellRef  * scale
-        val dotRadius   = dotCellSize * 0.42f
+        val dotRadius   = dotCellSize * 0.28f   // medium-small dots
         val lineH       = lineHRef    * scale
         val habitGap    = habitGapRef * scale
 
@@ -129,9 +134,9 @@ object WallpaperExporter {
         }
         val dotPaint  = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        // ── center content vertically ─────────────────────────────────────
+        // ── center content in the available zone (between clock and shortcuts)
         val totalH = totalHRef * scale
-        var y = ((h - totalH) / 2f).coerceIn(h * 0.06f, h * 0.40f)
+        var y = topReserve + ((availableH - totalH) / 2f).coerceAtLeast(0f)
 
         // ── draw sections ─────────────────────────────────────────────────
         sections.forEachIndexed { i, s ->
