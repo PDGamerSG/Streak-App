@@ -308,16 +308,19 @@ private fun PhoneMockup(uiState: PreviewUiState) {
                         )
                         Spacer(Modifier.height(8.dp))
 
-                        // Dot grid
+                        // Dot grid — height derived from spacing formula so dots aren't clipped
                         val rows = kotlin.math.ceil(
                             habitWithDots.dots.size.toDouble() / dotsPerRow
                         ).toInt().coerceAtLeast(1)
+                        // width/height = (dotsPerRow + (dotsPerRow-1)*0.5) / (1.5 * (rows + 1/3))
+                        val canvasRatio = (dotsPerRow + (dotsPerRow - 1) * 0.5f) /
+                                          (1.5f * (rows + 1f / 3f))
                         DotGridCanvas(
                             dots = habitWithDots.dots,
                             dotsPerRow = dotsPerRow,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height((rows * 16).dp)
+                                .aspectRatio(canvasRatio)
                         )
                         Spacer(Modifier.height(6.dp))
 
