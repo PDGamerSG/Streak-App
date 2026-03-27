@@ -14,16 +14,24 @@ val DotStreakToday = Color(0xFFFFFFFF)
 val DotStreakAccent = Color(0xFFFF6B35)
 
 // Preset habit colors
-val HabitBlue = Color(0xFF4A90D9)
-val HabitGreen = Color(0xFF27AE60)
-val HabitAmber = Color(0xFFF39C12)
+val HabitBlue   = Color(0xFF4A90D9)
+val HabitGreen  = Color(0xFF27AE60)
+val HabitAmber  = Color(0xFFF39C12)
 val HabitPurple = Color(0xFF8E44AD)
 val HabitOrange = Color(0xFFE67E22)
+val HabitCyan   = Color(0xFF1ABC9C)
+val HabitRed    = Color(0xFFE74C3C)
+val HabitPink   = Color(0xFFE91E8C)
+val HabitWhite  = Color(0xFFFFFFFF)
 
 val HABIT_COLOR_PRESETS = listOf(
     "#4A90D9" to HabitBlue,
     "#27AE60" to HabitGreen,
     "#F39C12" to HabitAmber,
     "#8E44AD" to HabitPurple,
-    "#E67E22" to HabitOrange
+    "#E67E22" to HabitOrange,
+    "#1ABC9C" to HabitCyan,
+    "#E74C3C" to HabitRed,
+    "#E91E8C" to HabitPink,
+    "#FFFFFF" to HabitWhite
 )

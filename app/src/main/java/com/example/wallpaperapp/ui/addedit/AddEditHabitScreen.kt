@@ -4,10 +4,11 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Switch
@@ -66,7 +68,7 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditHabitScreen(
     viewModel: AddEditHabitViewModel,
@@ -265,20 +267,37 @@ fun AddEditHabitScreen(
 
             // Color picker
             SectionLabel("Color")
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 HABIT_COLOR_PRESETS.forEach { (hex, color) ->
                     val isSelected = uiState.selectedColor == hex
+                    val isLight = hex == "#FFFFFF"
+                    val borderColor = when {
+                        isSelected && isLight -> Color(0xFF888888)
+                        isSelected            -> Color.White
+                        else                  -> Color(0xFF2A2A2A)
+                    }
+                    val checkTint = if (isLight) Color(0xFF1A1A1A) else Color.White
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(color)
-                            .then(
-                                if (isSelected) Modifier.border(3.dp, Color.White, CircleShape)
-                                else Modifier.border(1.dp, Color(0xFF2A2A2A), CircleShape)
+                            .border(if (isSelected) 2.dp else 1.dp, borderColor, CircleShape)
+                            .clickable { viewModel.onColorChange(hex) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = checkTint,
+                                modifier = Modifier.size(16.dp)
                             )
-                            .clickable { viewModel.onColorChange(hex) }
-                    )
+                        }
+                    }
                 }
             }
 
