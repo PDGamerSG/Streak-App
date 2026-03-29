@@ -45,15 +45,25 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.example.wallpaperapp.data.backup.BackupManager
 import com.example.wallpaperapp.ui.checkin.CheckInBottomSheet
 import com.example.wallpaperapp.ui.components.HabitCard
 import com.example.wallpaperapp.ui.components.MilestoneOverlay
 import com.example.wallpaperapp.ui.theme.DotStreakAccent
 import com.example.wallpaperapp.ui.theme.DotStreakBackground
 import com.example.wallpaperapp.ui.theme.DotStreakSecondaryText
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +75,43 @@ fun HomeScreen(
     onOpenPreview: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showSettingsMenu by remember { mutableStateOf(false) }
+    var showRestoreConfirm by remember { mutableStateOf(false) }
+
+    // SAF: create backup file
+    val backupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val json = BackupManager.exportToJson(context)
+                    BackupManager.writeToUri(context, uri, json)
+                    Toast.makeText(context, "Backup saved", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // SAF: pick backup file to restore
+    val restoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    BackupManager.restoreFromUri(context, uri)
+                    Toast.makeText(context, "Restore complete", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = DotStreakBackground,
@@ -97,6 +144,39 @@ fun HomeScreen(
                             tint = Color(0xFF666666)
                         )
                     }
+                    Box {
+                        IconButton(onClick = { showSettingsMenu = true }) {
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                contentDescription = "More options",
+                                tint = Color(0xFF666666)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSettingsMenu,
+                            onDismissRequest = { showSettingsMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Backup Data") },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    val fileName = "dotstreak_backup_${
+                                        LocalDateTime.now().format(
+                                            DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")
+                                        )
+                                    }.json"
+                                    backupLauncher.launch(fileName)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Restore Data") },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    showRestoreConfirm = true
+                                }
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = DotStreakBackground
@@ -117,20 +197,23 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(DotStreakBackground)
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Button(
                     onClick = { viewModel.showCheckIn() },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = DotStreakAccent),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = "CHECK IN TODAY",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp,
-                        fontSize = 13.sp
+                        fontSize = 14.sp
                     )
                 }
             }
@@ -217,6 +300,26 @@ fun HomeScreen(
                 onMilestoneReached = { habitId, pct ->
                     viewModel.hideCheckIn()
                     viewModel.triggerMilestone(habitId, pct)
+                }
+            )
+        }
+
+        // Restore confirmation dialog
+        if (showRestoreConfirm) {
+            AlertDialog(
+                onDismissRequest = { showRestoreConfirm = false },
+                title = { Text("Restore Data") },
+                text = { Text("This will replace all current habits and logs with the backup. This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showRestoreConfirm = false
+                        restoreLauncher.launch(arrayOf("application/json"))
+                    }) {
+                        Text("Restore", color = DotStreakAccent)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRestoreConfirm = false }) { Text("Cancel") }
                 }
             )
         }
