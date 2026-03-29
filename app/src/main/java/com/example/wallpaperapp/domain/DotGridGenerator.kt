@@ -23,6 +23,7 @@ object DotGridGenerator {
     const val COLOR_MISSED = "#FF6B35"
     const val COLOR_FUTURE = "#3A3A3A"
     const val COLOR_TODAY  = "#FFFFFF"
+    const val COLOR_NULL   = "#2A2A2A"   // neutral/unlogged past day
 
     /**
      * One dot per day of the current month. Outside habit range = invisible placeholder.
@@ -53,8 +54,10 @@ object DotGridGenerator {
                 }
                 logMap[date] == DayStatus.COMPLETED ->
                     DotState(colorHex = completedColor)
-                else ->
+                logMap[date] == DayStatus.MISSED ->
                     DotState(colorHex = COLOR_MISSED)
+                else ->
+                    DotState(colorHex = COLOR_NULL)   // unlogged past day = neutral
             }
         }
     }

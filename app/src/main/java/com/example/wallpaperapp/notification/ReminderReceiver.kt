@@ -4,13 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.example.wallpaperapp.data.db.AppDatabase
-import com.example.wallpaperapp.data.model.DayLog
-import com.example.wallpaperapp.data.model.DayStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class ReminderReceiver : BroadcastReceiver() {
 
@@ -29,20 +26,10 @@ class ReminderReceiver : BroadcastReceiver() {
             try {
                 val db = AppDatabase.getInstance(context)
                 val habit = db.habitDao().getHabitById(habitId).first() ?: return@launch
-                val today = LocalDate.now()
-                val yesterday = today.minusDays(1)
 
-                // Auto-mark yesterday as MISSED if the user never tapped Done or Skip
-                val isYesterdayInRange = !yesterday.isBefore(habit.startDate) &&
-                        (habit.isInfinite || !yesterday.isAfter(habit.endDate))
-                if (isYesterdayInRange) {
-                    val existingLog = db.dayLogDao().getLogForHabitAndDate(habitId, yesterday)
-                    if (existingLog == null) {
-                        db.dayLogDao().upsertDayLog(
-                            DayLog(habitId = habitId, date = yesterday, status = DayStatus.MISSED)
-                        )
-                    }
-                }
+                // Unlogged past days stay null (neutral) — user must explicitly mark
+                // Done or Missed. This avoids penalising new installs or days the
+                // user simply didn't interact with the app.
 
                 // Show today's reminder notification
                 NotificationHelper.createNotificationChannel(context)

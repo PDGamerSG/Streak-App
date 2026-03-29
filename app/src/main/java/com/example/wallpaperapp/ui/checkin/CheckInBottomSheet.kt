@@ -112,8 +112,13 @@ fun CheckInBottomSheet(
                         CheckInHabitRow(
                             item = item,
                             onMark = { status ->
-                                vm.markHabit(item.habit.id, status) { hId, pct ->
-                                    onMilestoneReached(hId, pct)
+                                // Toggle off: if already set to this status, clear it
+                                if (item.todayStatus == status) {
+                                    vm.clearHabit(item.habit.id)
+                                } else {
+                                    vm.markHabit(item.habit.id, status) { hId, pct ->
+                                        onMilestoneReached(hId, pct)
+                                    }
                                 }
                             }
                         )
@@ -146,6 +151,7 @@ private fun CheckInHabitRow(
     onMark: (DayStatus) -> Unit
 ) {
     val habitColor = parseColor(item.habit.color)
+    val isNil = item.todayStatus == null
 
     Row(
         modifier = Modifier
@@ -154,12 +160,12 @@ private fun CheckInHabitRow(
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFF111111))
     ) {
-        // Left accent bar
+        // Left accent bar — dim when nil, bright when actioned
         Box(
             modifier = Modifier
                 .width(3.dp)
                 .fillMaxHeight()
-                .background(habitColor)
+                .background(if (isNil) habitColor.copy(alpha = 0.3f) else habitColor)
         )
 
         Row(
@@ -168,15 +174,26 @@ private fun CheckInHabitRow(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = item.habit.name,
-                color = Color(0xFFCCCCCC),
-                modifier = Modifier.weight(1f),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
-            )
+            // Habit name + nil indicator
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.habit.name,
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                if (isNil) {
+                    Text(
+                        text = "not logged",
+                        color = Color(0xFF444444),
+                        fontSize = 9.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
             Spacer(Modifier.width(8.dp))
-            // Done button
+
+            // Done button (✓) — toggles on/off
             OutlinedButton(
                 onClick = { onMark(DayStatus.COMPLETED) },
                 colors = ButtonDefaults.outlinedButtonColors(
@@ -197,7 +214,8 @@ private fun CheckInHabitRow(
                 )
             }
             Spacer(Modifier.width(6.dp))
-            // Missed button
+
+            // Missed button (✗) — toggles on/off
             OutlinedButton(
                 onClick = { onMark(DayStatus.MISSED) },
                 colors = ButtonDefaults.outlinedButtonColors(

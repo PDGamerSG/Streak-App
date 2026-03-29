@@ -12,6 +12,7 @@ val DotStreakMissed = Color(0xFFE74C3C)
 val DotStreakFuture = Color(0xFF3A3A3A)
 val DotStreakToday = Color(0xFFFFFFFF)
 val DotStreakAccent = Color(0xFFFF6B35)
+val DotStreakNull = Color(0xFF2A2A2A)   // neutral/unlogged past day
 
 // Preset habit colors
 val HabitBlue   = Color(0xFF4A90D9)

@@ -39,6 +39,14 @@ class DayLogDao(private val db: AppDatabase) {
         db.triggerRefresh()
     }
 
+    suspend fun deleteDayLog(habitId: Long, date: LocalDate) = withContext(Dispatchers.IO) {
+        db.helper.writableDatabase.delete(
+            "day_logs", "habitId=? AND date=?",
+            arrayOf(habitId.toString(), date.toString())
+        )
+        db.triggerRefresh()
+    }
+
     suspend fun getAllLogsDirectForHabit(habitId: Long): List<DayLog> =
         withContext(Dispatchers.IO) { queryForHabit(habitId) }
 

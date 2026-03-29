@@ -75,6 +75,13 @@ class CheckInViewModel(
         }
     }
 
+    fun clearHabit(habitId: Long) {
+        viewModelScope.launch {
+            repository.deleteDayLog(habitId, today)
+            HabitCheckInHelper.autoUpdateWallpaper(appContext)
+        }
+    }
+
     fun markHabit(habitId: Long, status: DayStatus, onMilestone: (Long, Int) -> Unit) {
         viewModelScope.launch {
             val currentItem = _uiState.value.items.find { it.habit.id == habitId } ?: return@launch

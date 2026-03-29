@@ -25,4 +25,7 @@ class HabitRepository(private val db: AppDatabase) {
         db.dayLogDao().getLogForHabitAndDate(habitId, date)
 
     suspend fun upsertDayLog(log: DayLog) = db.dayLogDao().upsertDayLog(log)
+
+    suspend fun deleteDayLog(habitId: Long, date: LocalDate) =
+        db.dayLogDao().deleteDayLog(habitId, date)
 }
