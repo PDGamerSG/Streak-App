@@ -39,6 +39,9 @@ class AddEditHabitViewModel(
     private val _uiState = MutableStateFlow(AddEditUiState())
     val uiState: StateFlow<AddEditUiState> = _uiState
 
+    /** Preserved from the loaded habit so edits don't wipe it. */
+    private var existingStreakOffset: Int = 0
+
     init {
         if (habitId > 0) loadHabit()
     }
@@ -46,6 +49,7 @@ class AddEditHabitViewModel(
     private fun loadHabit() {
         viewModelScope.launch {
             val habit = repository.getHabitById(habitId).first() ?: return@launch
+            existingStreakOffset = habit.streakOffset
             _uiState.value = _uiState.value.copy(
                 name = habit.name,
                 startDate = habit.startDate,
@@ -97,6 +101,7 @@ class AddEditHabitViewModel(
                 endDate = if (state.isInfinite) INFINITE_END_DATE else state.endDate,
                 color = state.selectedColor,
                 reminderTime = state.reminderTime,
+                streakOffset = existingStreakOffset,
                 frequencyType = if (state.isWeekly) "WEEKLY" else "DAILY",
                 weeklyTarget = state.weeklyTarget
             )
