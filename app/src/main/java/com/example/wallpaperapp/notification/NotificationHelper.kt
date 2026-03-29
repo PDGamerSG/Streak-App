@@ -68,18 +68,18 @@ object NotificationHelper {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(habitName)
-            .setContentText("Did you complete today's habit?")
+            .setContentText("Tap to check in for today")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Time to check in! Did you complete \"$habitName\" today?")
+                    .bigText("Did you complete \"$habitName\" today? Tap to log it.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(popupPendingIntent)   // tap body → popup
             .setFullScreenIntent(popupPendingIntent, true)  // lock screen → popup
             .setAutoCancel(false)
-            .addAction(android.R.drawable.checkbox_on_background, "✓  Done", donePendingIntent)
-            .addAction(android.R.drawable.ic_delete, "✗  Skip", skipPendingIntent)
+            .addAction(android.R.drawable.checkbox_on_background, "✓ Done", donePendingIntent)
+            .addAction(android.R.drawable.ic_delete, "✗ Not Done", skipPendingIntent)
             .build()
 
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
