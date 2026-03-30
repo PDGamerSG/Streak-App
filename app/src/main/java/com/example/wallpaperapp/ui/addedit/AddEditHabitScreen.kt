@@ -9,13 +9,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.DatePicker
@@ -56,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.wallpaperapp.notification.ReminderScheduler
+import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.ui.components.parseColor
 import com.example.wallpaperapp.ui.theme.DotStreakAccent
 import com.example.wallpaperapp.ui.theme.DotStreakBackground
@@ -80,6 +85,7 @@ fun AddEditHabitScreen(
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
+    var showCheckinDatePicker by remember { mutableStateOf(false) }
 
     // Navigate back after successful save
     LaunchedEffect(uiState.savedSuccessfully) {
@@ -335,6 +341,118 @@ fun AddEditHabitScreen(
                 }
             }
 
+            // Edit check-in for a specific date (only in edit mode)
+            if (uiState.isEditMode) {
+                Spacer(Modifier.height(8.dp))
+                SectionLabel("Edit Check-in")
+
+                // Date selector
+                DateFieldButton(
+                    label = "📅 ${uiState.checkinDate.format(dateFormatter)}",
+                    onClick = { showCheckinDatePicker = true }
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Status display and buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF111111))
+                ) {
+                    // Left accent bar
+                    val habitColor = parseColor(uiState.selectedColor)
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .fillMaxHeight()
+                            .background(
+                                if (uiState.checkinStatus == null) habitColor.copy(alpha = 0.3f)
+                                else habitColor
+                            )
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Status text
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = when (uiState.checkinStatus) {
+                                    DayStatus.COMPLETED -> "Completed"
+                                    DayStatus.MISSED -> "Missed"
+                                    else -> "Not logged"
+                                },
+                                color = when (uiState.checkinStatus) {
+                                    DayStatus.COMPLETED -> Color(0xFF27AE60)
+                                    DayStatus.MISSED -> Color(0xFFFF6B35)
+                                    else -> Color(0xFF444444)
+                                },
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+
+                        // Completed button (✓)
+                        OutlinedButton(
+                            onClick = { viewModel.markCheckinDate(DayStatus.COMPLETED) },
+                            enabled = !uiState.checkinLoading,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (uiState.checkinStatus == DayStatus.COMPLETED)
+                                    Color(0xFF27AE60).copy(alpha = 0.15f) else Color.Transparent
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (uiState.checkinStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else Color(0xFF333333)
+                            ),
+                            modifier = Modifier.height(34.dp),
+                            shape = RoundedCornerShape(7.dp)
+                        ) {
+                            Text(
+                                "✓",
+                                color = if (uiState.checkinStatus == DayStatus.COMPLETED) Color(0xFF27AE60) else Color(0xFF555555),
+                                fontSize = 13.sp
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+
+                        // Missed button (✗)
+                        OutlinedButton(
+                            onClick = { viewModel.markCheckinDate(DayStatus.MISSED) },
+                            enabled = !uiState.checkinLoading,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (uiState.checkinStatus == DayStatus.MISSED)
+                                    Color(0xFFFF6B35).copy(alpha = 0.12f) else Color.Transparent
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (uiState.checkinStatus == DayStatus.MISSED) Color(0xFFFF6B35) else Color(0xFF333333)
+                            ),
+                            modifier = Modifier.height(34.dp),
+                            shape = RoundedCornerShape(7.dp)
+                        ) {
+                            Text(
+                                "✗",
+                                color = if (uiState.checkinStatus == DayStatus.MISSED) Color(0xFFFF6B35) else Color(0xFF555555),
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    "Tap ✓ or ✗ to change status. Tap again to clear.",
+                    color = DotStreakSecondaryText,
+                    fontSize = 11.sp
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
 
             // Save button
@@ -408,6 +526,30 @@ fun AddEditHabitScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = state)
+        }
+    }
+
+    // Check-in date picker dialog
+    if (showCheckinDatePicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.checkinDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showCheckinDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { millis ->
+                        val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                        viewModel.onCheckinDateChange(date)
+                    }
+                    showCheckinDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCheckinDatePicker = false }) { Text("Cancel") }
             }
         ) {
             DatePicker(state = state)

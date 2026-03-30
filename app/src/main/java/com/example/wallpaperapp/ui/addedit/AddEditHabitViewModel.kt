@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.wallpaperapp.data.model.DayLog
+import com.example.wallpaperapp.data.model.DayStatus
 import com.example.wallpaperapp.data.model.Habit
 import com.example.wallpaperapp.data.model.INFINITE_END_DATE
 import com.example.wallpaperapp.data.repository.HabitRepository
@@ -27,7 +29,11 @@ data class AddEditUiState(
     val dateError: String? = null,
     val isSaving: Boolean = false,
     val savedSuccessfully: Boolean = false,
-    val isEditMode: Boolean = false
+    val isEditMode: Boolean = false,
+    // Edit check-in state
+    val checkinDate: LocalDate = LocalDate.now(),
+    val checkinStatus: DayStatus? = null,
+    val checkinLoading: Boolean = false
 )
 
 class AddEditHabitViewModel(
@@ -50,6 +56,7 @@ class AddEditHabitViewModel(
         viewModelScope.launch {
             val habit = repository.getHabitById(habitId).first() ?: return@launch
             existingStreakOffset = habit.streakOffset
+            val todayLog = repository.getLogForHabitAndDate(habitId, LocalDate.now())
             _uiState.value = _uiState.value.copy(
                 name = habit.name,
                 startDate = habit.startDate,
@@ -59,7 +66,8 @@ class AddEditHabitViewModel(
                 weeklyTarget = habit.weeklyTarget,
                 selectedColor = habit.color,
                 reminderTime = habit.reminderTime,
-                isEditMode = true
+                isEditMode = true,
+                checkinStatus = todayLog?.status
             )
         }
     }
@@ -78,6 +86,30 @@ class AddEditHabitViewModel(
     fun onWeeklyTargetChange(target: Int) { _uiState.value = _uiState.value.copy(weeklyTarget = target.coerceIn(1, 7)) }
     fun onColorChange(hex: String) { _uiState.value = _uiState.value.copy(selectedColor = hex) }
     fun onReminderTimeChange(time: String) { _uiState.value = _uiState.value.copy(reminderTime = time) }
+
+    fun onCheckinDateChange(date: LocalDate) {
+        _uiState.value = _uiState.value.copy(checkinDate = date, checkinLoading = true)
+        viewModelScope.launch {
+            val log = repository.getLogForHabitAndDate(habitId, date)
+            _uiState.value = _uiState.value.copy(checkinStatus = log?.status, checkinLoading = false)
+        }
+    }
+
+    fun markCheckinDate(status: DayStatus) {
+        val state = _uiState.value
+        viewModelScope.launch {
+            if (state.checkinStatus == status) {
+                repository.deleteDayLog(habitId, state.checkinDate)
+                _uiState.value = _uiState.value.copy(checkinStatus = null)
+            } else {
+                repository.upsertDayLog(DayLog(habitId = habitId, date = state.checkinDate, status = status))
+                _uiState.value = _uiState.value.copy(checkinStatus = status)
+            }
+            try {
+                HabitCheckInHelper.autoUpdateWallpaper(appContext)
+            } catch (_: Exception) { /* wallpaper permission may not be granted */ }
+        }
+    }
 
     fun saveHabit(onSaved: (Long) -> Unit) {
         val state = _uiState.value
@@ -106,7 +138,9 @@ class AddEditHabitViewModel(
                 weeklyTarget = state.weeklyTarget
             )
             val savedId = repository.upsertHabit(habit)
-            HabitCheckInHelper.autoUpdateWallpaper(appContext)
+            try {
+                HabitCheckInHelper.autoUpdateWallpaper(appContext)
+            } catch (_: Exception) { /* wallpaper permission may not be granted */ }
             _uiState.value = _uiState.value.copy(isSaving = false, savedSuccessfully = true)
             onSaved(savedId)
         }

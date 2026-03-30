@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 
 class AppDatabase private constructor(context: Context) {
 
-    internal val refreshSignal = MutableSharedFlow<Unit>(replay = 1).also { it.tryEmit(Unit) }
+    internal val refreshSignal = MutableSharedFlow<Unit>(replay = 1, extraBufferCapacity = 10).also { it.tryEmit(Unit) }
     internal val helper: DbHelper = DbHelper(context.applicationContext)
 
     fun habitDao(): HabitDao = HabitDao(this)
