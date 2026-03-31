@@ -32,10 +32,14 @@ class ReminderReceiver : BroadcastReceiver() {
                 val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
                 val isScreenOn = powerManager.isInteractive
 
+                // Always post a notification so it appears in the notification bar
+                // (visible on the lock screen and in the shade at any time).
+                NotificationHelper.createNotificationChannel(context)
+                NotificationHelper.showReminder(context, habitId, habitName)
+
+                // Additionally, if the screen is on and overlay permission is granted,
+                // launch the popup bottom sheet directly over the current screen.
                 if (Settings.canDrawOverlays(context) && isScreenOn) {
-                    // Screen is ON and overlay permission is granted.
-                    // SYSTEM_ALERT_WINDOW allows background activity launches on Android 10+,
-                    // so start the popup directly — no notification bar entry.
                     context.startActivity(
                         Intent(context, ReminderPopupActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -45,12 +49,6 @@ class ReminderReceiver : BroadcastReceiver() {
                             putExtra(ReminderPopupActivity.EXTRA_HABIT_NAME, habitName)
                         }
                     )
-                } else {
-                    // Screen is OFF (or overlay permission not granted).
-                    // Send a notification — the fullScreenIntent will wake the screen
-                    // and show ReminderPopupActivity over the lock screen.
-                    NotificationHelper.createNotificationChannel(context)
-                    NotificationHelper.showReminder(context, habitId, habitName)
                 }
 
                 // Re-schedule tomorrow's alarm
