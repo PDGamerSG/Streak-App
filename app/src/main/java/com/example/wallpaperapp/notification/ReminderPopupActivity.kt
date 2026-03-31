@@ -240,9 +240,4 @@ class ReminderPopupActivity : ComponentActivity() {
         ringtone?.stop()
     }
 
-    // Back button / system navigation dismisses without logging
-    override fun onPause() {
-        super.onPause()
-        if (!isFinishing) finish()
-    }
 }
