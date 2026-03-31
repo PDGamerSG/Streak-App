@@ -1,6 +1,8 @@
 package com.example.wallpaperapp.notification
 
 import android.app.NotificationManager
+import android.media.Ringtone
+import android.media.RingtoneManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -46,6 +48,8 @@ class ReminderPopupActivity : ComponentActivity() {
         const val EXTRA_HABIT_NAME = "habit_name"
     }
 
+    private var ringtone: Ringtone? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -61,16 +65,22 @@ class ReminderPopupActivity : ComponentActivity() {
             )
         }
 
-        // Transparent fullscreen window — scrim and layout handled in Compose
+        // Transparent fullscreen window — no system-level dimming
         window.setBackgroundDrawableResource(android.R.color.transparent)
 
         val habitId   = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
         val habitName = intent.getStringExtra(EXTRA_HABIT_NAME) ?: ""
 
-        // Cancel any companion notification (no-op if none was posted)
+        // Cancel any companion notification and clear the in-app signal
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(habitId.toInt())
-        // Also clear the in-app dialog signal if it was set
         ReminderState.clear()
+
+        // Play the default notification sound
+        try {
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+            ringtone?.play()
+        } catch (_: Exception) { /* ignore if audio not available */ }
 
         setContent {
             val scope = rememberCoroutineScope()
@@ -83,15 +93,16 @@ class ReminderPopupActivity : ComponentActivity() {
                 }
             }
 
-            // Fullscreen Box: semi-transparent scrim that dismisses on tap
+            // Fullscreen transparent container — tapping above the sheet dismisses it
+            // without dimming / blacking out the screen behind
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xCC000000))       // dark scrim
-                    .clickable { finish() },             // tap scrim → dismiss
+                    .background(Color.Transparent)
+                    .clickable { finish() },
                 contentAlignment = Alignment.BottomCenter
             ) {
-                // Bottom sheet card — consume touches so they don't reach the scrim
+                // Bottom sheet card — consumes touches so they don't reach the dismiss handler
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -100,7 +111,7 @@ class ReminderPopupActivity : ComponentActivity() {
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
-                        ) { /* consume touches, keep sheet open */ }
+                        ) { /* consume — keep sheet open */ }
                         .padding(horizontal = 24.dp)
                         .padding(top = 16.dp, bottom = 36.dp)
                 ) {
@@ -145,7 +156,6 @@ class ReminderPopupActivity : ComponentActivity() {
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Habit name
                     Text(
                         text = habitName,
                         color = Color.White,
@@ -166,7 +176,6 @@ class ReminderPopupActivity : ComponentActivity() {
 
                     Spacer(Modifier.height(28.dp))
 
-                    // Action buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -226,7 +235,12 @@ class ReminderPopupActivity : ComponentActivity() {
         }
     }
 
-    // Back button / system navigation also dismisses
+    override fun onDestroy() {
+        super.onDestroy()
+        ringtone?.stop()
+    }
+
+    // Back button / system navigation dismisses without logging
     override fun onPause() {
         super.onPause()
         if (!isFinishing) finish()

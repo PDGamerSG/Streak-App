@@ -3,6 +3,7 @@ package com.example.wallpaperapp.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.provider.Settings
 import com.example.wallpaperapp.data.db.AppDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -28,10 +29,13 @@ class ReminderReceiver : BroadcastReceiver() {
                 val db = AppDatabase.getInstance(context)
                 val habit = db.habitDao().getHabitById(habitId).first() ?: return@launch
 
-                if (Settings.canDrawOverlays(context)) {
-                    // "Display over other apps" is granted.
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                val isScreenOn = powerManager.isInteractive
+
+                if (Settings.canDrawOverlays(context) && isScreenOn) {
+                    // Screen is ON and overlay permission is granted.
                     // SYSTEM_ALERT_WINDOW allows background activity launches on Android 10+,
-                    // so we can start the popup directly — no notification bar entry at all.
+                    // so start the popup directly — no notification bar entry.
                     context.startActivity(
                         Intent(context, ReminderPopupActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -42,9 +46,9 @@ class ReminderReceiver : BroadcastReceiver() {
                         }
                     )
                 } else {
-                    // Permission not granted — signal the in-app dialog (if app is open)
-                    // and post a notification with fullScreenIntent as fallback.
-                    ReminderState.set(habitId, habitName)
+                    // Screen is OFF (or overlay permission not granted).
+                    // Send a notification — the fullScreenIntent will wake the screen
+                    // and show ReminderPopupActivity over the lock screen.
                     NotificationHelper.createNotificationChannel(context)
                     NotificationHelper.showReminder(context, habitId, habitName)
                 }
