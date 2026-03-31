@@ -3,6 +3,7 @@ package com.example.wallpaperapp.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import com.example.wallpaperapp.data.db.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,16 +28,26 @@ class ReminderReceiver : BroadcastReceiver() {
                 val db = AppDatabase.getInstance(context)
                 val habit = db.habitDao().getHabitById(habitId).first() ?: return@launch
 
-                // Unlogged past days stay null (neutral) — user must explicitly mark
-                // Done or Missed. This avoids penalising new installs or days the
-                // user simply didn't interact with the app.
-
-                // Signal the running app to show an in-app overlay dialog
-                ReminderState.set(habitId, habitName)
-
-                // Also post a system notification (handles lock-screen / app-not-running cases)
-                NotificationHelper.createNotificationChannel(context)
-                NotificationHelper.showReminder(context, habitId, habitName)
+                if (Settings.canDrawOverlays(context)) {
+                    // "Display over other apps" is granted.
+                    // SYSTEM_ALERT_WINDOW allows background activity launches on Android 10+,
+                    // so we can start the popup directly — no notification bar entry at all.
+                    context.startActivity(
+                        Intent(context, ReminderPopupActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra(ReminderPopupActivity.EXTRA_HABIT_ID, habitId)
+                            putExtra(ReminderPopupActivity.EXTRA_HABIT_NAME, habitName)
+                        }
+                    )
+                } else {
+                    // Permission not granted — signal the in-app dialog (if app is open)
+                    // and post a notification with fullScreenIntent as fallback.
+                    ReminderState.set(habitId, habitName)
+                    NotificationHelper.createNotificationChannel(context)
+                    NotificationHelper.showReminder(context, habitId, habitName)
+                }
 
                 // Re-schedule tomorrow's alarm
                 if (habit.reminderTime.isNotBlank()) {
