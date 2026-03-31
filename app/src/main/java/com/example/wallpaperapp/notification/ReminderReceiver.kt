@@ -31,7 +31,10 @@ class ReminderReceiver : BroadcastReceiver() {
                 // Done or Missed. This avoids penalising new installs or days the
                 // user simply didn't interact with the app.
 
-                // Show today's reminder notification
+                // Signal the running app to show an in-app overlay dialog
+                ReminderState.set(habitId, habitName)
+
+                // Also post a system notification (handles lock-screen / app-not-running cases)
                 NotificationHelper.createNotificationChannel(context)
                 NotificationHelper.showReminder(context, habitId, habitName)
 
