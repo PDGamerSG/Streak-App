@@ -48,16 +48,16 @@ object DotGridGenerator {
                 date.isAfter(today) ->
                     DotState(colorHex = COLOR_FUTURE)
                 date == today -> when (logMap[date]) {
-                    DayStatus.MISSED    -> DotState(colorHex = COLOR_MISSED,    isToday = true)
-                    DayStatus.COMPLETED -> DotState(colorHex = completedColor,  isToday = true)
-                    else                -> DotState(colorHex = COLOR_TODAY,     isToday = true)
+                    DayStatus.MISSED    -> DotState(colorHex = COLOR_MISSED,   isToday = true)
+                    DayStatus.COMPLETED -> DotState(colorHex = completedColor, isToday = true)
+                    else                -> DotState(colorHex = COLOR_TODAY,    isToday = true, isVisible = false)
                 }
                 logMap[date] == DayStatus.COMPLETED ->
                     DotState(colorHex = completedColor)
                 logMap[date] == DayStatus.MISSED ->
                     DotState(colorHex = COLOR_MISSED)
                 else ->
-                    DotState(colorHex = COLOR_NULL)   // unlogged past day = neutral
+                    DotState(colorHex = COLOR_NULL, isVisible = false)  // unlogged/cleared = empty
             }
         }
     }
