@@ -151,35 +151,55 @@ fun AddEditHabitScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 val freqBtnModifier = Modifier.weight(1f)
+                val monthlyColor = Color(0xFF4ECDC4)
+
                 // Daily button
+                val isDaily = uiState.frequencyType == "DAILY"
                 androidx.compose.material3.OutlinedButton(
-                    onClick = { viewModel.onWeeklyChange(false) },
+                    onClick = { viewModel.onFrequencyChange("DAILY") },
                     modifier = freqBtnModifier,
                     colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (!uiState.isWeekly) DotStreakAccent.copy(alpha = 0.15f) else Color.Transparent,
-                        contentColor = if (!uiState.isWeekly) DotStreakAccent else DotStreakSecondaryText
+                        containerColor = if (isDaily) DotStreakAccent.copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor = if (isDaily) DotStreakAccent else DotStreakSecondaryText
                     ),
                     border = androidx.compose.foundation.BorderStroke(
-                        1.dp, if (!uiState.isWeekly) DotStreakAccent else Color(0xFF2A2A2A)
+                        1.dp, if (isDaily) DotStreakAccent else Color(0xFF2A2A2A)
                     ),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                 ) {
-                    Text("Daily", fontWeight = if (!uiState.isWeekly) FontWeight.Bold else FontWeight.Normal)
+                    Text("Daily", fontWeight = if (isDaily) FontWeight.Bold else FontWeight.Normal)
                 }
                 // Weekly button
+                val isWeekly = uiState.isWeekly
                 androidx.compose.material3.OutlinedButton(
-                    onClick = { viewModel.onWeeklyChange(true) },
+                    onClick = { viewModel.onFrequencyChange("WEEKLY") },
                     modifier = freqBtnModifier,
                     colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (uiState.isWeekly) Color(0xFF9B7FE8).copy(alpha = 0.15f) else Color.Transparent,
-                        contentColor = if (uiState.isWeekly) Color(0xFF9B7FE8) else DotStreakSecondaryText
+                        containerColor = if (isWeekly) Color(0xFF9B7FE8).copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor = if (isWeekly) Color(0xFF9B7FE8) else DotStreakSecondaryText
                     ),
                     border = androidx.compose.foundation.BorderStroke(
-                        1.dp, if (uiState.isWeekly) Color(0xFF9B7FE8) else Color(0xFF2A2A2A)
+                        1.dp, if (isWeekly) Color(0xFF9B7FE8) else Color(0xFF2A2A2A)
                     ),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                 ) {
-                    Text("Weekly", fontWeight = if (uiState.isWeekly) FontWeight.Bold else FontWeight.Normal)
+                    Text("Weekly", fontWeight = if (isWeekly) FontWeight.Bold else FontWeight.Normal)
+                }
+                // Monthly count button
+                val isMonthly = uiState.isMonthly
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.onFrequencyChange("MONTHLY") },
+                    modifier = freqBtnModifier,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (isMonthly) monthlyColor.copy(alpha = 0.15f) else Color.Transparent,
+                        contentColor = if (isMonthly) monthlyColor else DotStreakSecondaryText
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, if (isMonthly) monthlyColor else Color(0xFF2A2A2A)
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text("Count", fontWeight = if (isMonthly) FontWeight.Bold else FontWeight.Normal)
                 }
             }
 

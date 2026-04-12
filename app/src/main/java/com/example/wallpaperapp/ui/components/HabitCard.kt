@@ -53,6 +53,7 @@ fun HabitCard(
     milestoneBadge: Int?,
     isInfinite: Boolean = false,
     isWeekly: Boolean = false,
+    isMonthly: Boolean = false,
     weeklyTarget: Int = 1,
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -149,7 +150,11 @@ fun HabitCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (isWeekly) "WEEK\nSTREAK" else "DAY\nSTREAK",
+                        text = when {
+                            isMonthly -> "DAYS\nTHIS MO"
+                            isWeekly  -> "WEEK\nSTREAK"
+                            else      -> "DAY\nSTREAK"
+                        },
                         color = Color(0xFF4A4A4A),
                         fontSize = 8.sp,
                         letterSpacing = 0.8.sp,
@@ -164,6 +169,11 @@ fun HabitCard(
                 val pillFg: Color
                 val pillText: String
                 when {
+                    isMonthly -> {
+                        pillBg = Color(0xFF0D2624)
+                        pillFg = Color(0xFF4ECDC4)
+                        pillText = "COUNT"
+                    }
                     isWeekly -> {
                         pillBg = Color(0xFF1A1030)
                         pillFg = Color(0xFF9B7FE8)

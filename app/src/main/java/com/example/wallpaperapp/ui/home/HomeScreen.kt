@@ -355,6 +355,7 @@ private fun HabitCardWithMenu(
             milestoneBadge = habitStats.milestoneBadge,
             isInfinite = habitStats.habit.isInfinite,
             isWeekly = habitStats.habit.isWeekly,
+            isMonthly = habitStats.habit.isMonthly,
             weeklyTarget = habitStats.habit.weeklyTarget,
             onMoreClick = { showMenu = true }
         )

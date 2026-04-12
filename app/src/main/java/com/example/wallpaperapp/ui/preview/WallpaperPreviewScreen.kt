@@ -299,7 +299,11 @@ private fun PhoneMockup(uiState: PreviewUiState) {
 
                         // Streak label
                         Text(
-                            text = if (habit.isWeekly) "WEEK STREAK" else "DAY STREAK",
+                            text = when {
+                                habit.isMonthly -> "DAYS THIS MONTH"
+                                habit.isWeekly  -> "WEEK STREAK"
+                                else            -> "DAY STREAK"
+                            },
                             color = Color(0xFF555555),
                             fontSize = 7.sp,
                             modifier = Modifier.fillMaxWidth(),
@@ -327,11 +331,13 @@ private fun PhoneMockup(uiState: PreviewUiState) {
 
                         // Footer: days left or ongoing
                         val footerText = when {
+                            habit.isMonthly  -> "COUNT"
                             habit.isWeekly   -> "×${habit.weeklyTarget}/WEEK"
                             habit.isInfinite -> "ONGOING"
                             else             -> "$daysLeft DAYS LEFT"
                         }
                         val footerColor = when {
+                            habit.isMonthly  -> Color(0xFF4ECDC4)
                             habit.isWeekly   -> Color(0xFF9B7FE8)
                             habit.isInfinite -> Color(0xFF3DAA55)
                             else             -> Color(0xFF555555)

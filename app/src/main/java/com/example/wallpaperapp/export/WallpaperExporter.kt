@@ -154,7 +154,11 @@ object WallpaperExporter {
             y += streakPaint.textSize + lineH * 0.4f
 
             // Streak label
-            val labelText = if (s.habit.isWeekly) "WEEK STREAK" else "DAY STREAK"
+            val labelText = when {
+                s.habit.isMonthly -> "DAYS THIS MONTH"
+                s.habit.isWeekly  -> "WEEK STREAK"
+                else              -> "DAY STREAK"
+            }
             val labelX = (w - streakLabelPaint.measureText(labelText)) / 2f
             canvas.drawText(labelText, labelX, y + streakLabelPaint.textSize, streakLabelPaint)
             y += streakLabelPaint.textSize + lineH * 1.8f

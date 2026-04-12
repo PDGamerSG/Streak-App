@@ -21,7 +21,7 @@ data class AddEditUiState(
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now().plusDays(30),
     val isInfinite: Boolean = false,
-    val isWeekly: Boolean = false,
+    val frequencyType: String = "DAILY",  // "DAILY", "WEEKLY", or "MONTHLY"
     val weeklyTarget: Int = 4,
     val selectedColor: String = "#4A90D9",
     val reminderTime: String = "",
@@ -34,7 +34,10 @@ data class AddEditUiState(
     val checkinDate: LocalDate = LocalDate.now(),
     val checkinStatus: DayStatus? = null,
     val checkinLoading: Boolean = false
-)
+) {
+    val isWeekly: Boolean get() = frequencyType == "WEEKLY"
+    val isMonthly: Boolean get() = frequencyType == "MONTHLY"
+}
 
 class AddEditHabitViewModel(
     private val repository: HabitRepository,
@@ -62,7 +65,7 @@ class AddEditHabitViewModel(
                 startDate = habit.startDate,
                 endDate = habit.endDate,
                 isInfinite = habit.isInfinite,
-                isWeekly = habit.isWeekly,
+                frequencyType = habit.frequencyType,
                 weeklyTarget = habit.weeklyTarget,
                 selectedColor = habit.color,
                 reminderTime = habit.reminderTime,
@@ -82,7 +85,7 @@ class AddEditHabitViewModel(
 
     fun onEndDateChange(date: LocalDate) { _uiState.value = _uiState.value.copy(endDate = date, dateError = null) }
     fun onInfiniteChange(infinite: Boolean) { _uiState.value = _uiState.value.copy(isInfinite = infinite, dateError = null) }
-    fun onWeeklyChange(weekly: Boolean) { _uiState.value = _uiState.value.copy(isWeekly = weekly) }
+    fun onFrequencyChange(type: String) { _uiState.value = _uiState.value.copy(frequencyType = type) }
     fun onWeeklyTargetChange(target: Int) { _uiState.value = _uiState.value.copy(weeklyTarget = target.coerceIn(1, 7)) }
     fun onColorChange(hex: String) { _uiState.value = _uiState.value.copy(selectedColor = hex) }
     fun onReminderTimeChange(time: String) { _uiState.value = _uiState.value.copy(reminderTime = time) }
@@ -134,7 +137,7 @@ class AddEditHabitViewModel(
                 color = state.selectedColor,
                 reminderTime = state.reminderTime,
                 streakOffset = existingStreakOffset,
-                frequencyType = if (state.isWeekly) "WEEKLY" else "DAILY",
+                frequencyType = state.frequencyType,
                 weeklyTarget = state.weeklyTarget
             )
             val savedId = repository.upsertHabit(habit)

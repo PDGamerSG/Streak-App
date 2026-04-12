@@ -25,10 +25,11 @@ object StreakCalculator {
         habit: Habit,
         logs: List<DayLog>,
         today: LocalDate = LocalDate.now()
-    ): StreakResult = if (habit.isWeekly)
-        calculateWeekly(habit, logs, today)
-    else
-        calculateDaily(habit, logs, today)
+    ): StreakResult = when {
+        habit.isMonthly -> calculateMonthly(habit, logs, today)
+        habit.isWeekly  -> calculateWeekly(habit, logs, today)
+        else            -> calculateDaily(habit, logs, today)
+    }
 
     // ── Daily ─────────────────────────────────────────────────────────────────
 
@@ -127,6 +128,37 @@ object StreakCalculator {
             completionPercent = completionPercent,
             daysLeft          = habit.weeklyTarget - weekCount(currentMonday),
             totalDays         = totalWeeks
+        )
+    }
+
+    // ── Monthly (count) ────────────────────────────────────────────────────
+
+    private fun calculateMonthly(
+        habit: Habit,
+        logs: List<DayLog>,
+        today: LocalDate
+    ): StreakResult {
+        val monthStart  = today.withDayOfMonth(1)
+        val daysInMonth = YearMonth.of(today.year, today.month).lengthOfMonth()
+        val daysLeft    = daysInMonth - today.dayOfMonth
+
+        // Count completed days in the current month
+        val completedThisMonth = logs.count { log ->
+            log.status == DayStatus.COMPLETED &&
+                !log.date.isBefore(monthStart) &&
+                !log.date.isAfter(today)
+        }
+
+        val totalDays = (ChronoUnit.DAYS.between(habit.startDate, habit.endDate) + 1).toInt()
+        val totalCompleted = logs.count { it.status == DayStatus.COMPLETED }
+        val completionPercent = if (totalDays > 0) (totalCompleted / totalDays.toFloat()) * 100f else 0f
+
+        return StreakResult(
+            currentStreak     = completedThisMonth,
+            bestStreak        = completedThisMonth,
+            completionPercent = completionPercent,
+            daysLeft          = daysLeft,
+            totalDays         = totalDays
         )
     }
 
