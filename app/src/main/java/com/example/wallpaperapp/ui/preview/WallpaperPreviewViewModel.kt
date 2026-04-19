@@ -36,8 +36,12 @@ data class PreviewUiState(
     val isExporting: Boolean = false,
     val exportSuccess: Boolean = false,
     val exportError: String? = null,
-    val savedUri: Uri? = null
+    val savedUri: Uri? = null,
+    val isWallpaperEnabled: Boolean = false
 )
+
+private const val PREFS_NAME = "app_prefs"
+private const val KEY_WALLPAPER_ENABLED = "wallpaper_enabled"
 
 class WallpaperPreviewViewModel(private val repository: HabitRepository) : ViewModel() {
 
@@ -107,10 +111,12 @@ class WallpaperPreviewViewModel(private val repository: HabitRepository) : ViewM
                 val allLogs = state.habits.associate { it.habit.id to it.logs }
                 val bitmap = WallpaperExporter.renderBitmap(context, state.habits.map { it.habit }, allLogs)
                 val success = WallpaperExporter.setAsLockScreenWallpaper(context, bitmap)
+                if (success) persistWallpaperEnabled(context, true)
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     exportSuccess = success,
-                    exportError = if (!success) "Failed to set wallpaper" else null
+                    exportError = if (!success) "Failed to set wallpaper" else null,
+                    isWallpaperEnabled = if (success) true else _uiState.value.isWallpaperEnabled
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -119,6 +125,31 @@ class WallpaperPreviewViewModel(private val repository: HabitRepository) : ViewM
                 )
             }
         }
+    }
+
+    fun disableWallpaper(context: Context) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, exportError = null)
+            val success = WallpaperExporter.clearLockScreenWallpaper(context)
+            if (success) persistWallpaperEnabled(context, false)
+            _uiState.value = _uiState.value.copy(
+                isExporting = false,
+                exportSuccess = success,
+                exportError = if (!success) "Failed to disable wallpaper" else null,
+                isWallpaperEnabled = if (success) false else _uiState.value.isWallpaperEnabled
+            )
+        }
+    }
+
+    fun loadWallpaperState(context: Context) {
+        val enabled = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_WALLPAPER_ENABLED, false)
+        _uiState.value = _uiState.value.copy(isWallpaperEnabled = enabled)
+    }
+
+    private fun persistWallpaperEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_WALLPAPER_ENABLED, enabled).apply()
     }
 
     fun clearExportStatus() {

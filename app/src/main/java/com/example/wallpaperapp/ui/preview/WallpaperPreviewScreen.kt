@@ -67,10 +67,13 @@ fun WallpaperPreviewScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) { viewModel.loadWallpaperState(context) }
+
     LaunchedEffect(uiState.exportSuccess, uiState.exportError) {
         when {
             uiState.exportSuccess -> {
-                snackbarHostState.showSnackbar("Wallpaper saved ✓")
+                val msg = if (uiState.isWallpaperEnabled) "Wallpaper enabled ✓" else "Wallpaper disabled ✓"
+                snackbarHostState.showSnackbar(msg)
                 viewModel.clearExportStatus()
             }
             uiState.exportError != null -> {
@@ -137,11 +140,17 @@ fun WallpaperPreviewScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val enabled = uiState.isWallpaperEnabled
                 Button(
-                    onClick = { viewModel.setAsWallpaper(context) },
+                    onClick = {
+                        if (enabled) viewModel.disableWallpaper(context)
+                        else viewModel.setAsWallpaper(context)
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isExporting && uiState.habits.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = DotStreakAccent),
+                    enabled = !uiState.isExporting && (enabled || uiState.habits.isNotEmpty()),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (enabled) Color(0xFF2A2A2A) else DotStreakAccent
+                    ),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     if (uiState.isExporting) {
@@ -152,7 +161,7 @@ fun WallpaperPreviewScreen(
                         )
                     } else {
                         Text(
-                            "SET AS LOCK SCREEN",
+                            if (enabled) "DISABLE WALLPAPER" else "ENABLE WALLPAPER",
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp,
                             fontSize = 13.sp

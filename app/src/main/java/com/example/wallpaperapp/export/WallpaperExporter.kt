@@ -236,6 +236,13 @@ object WallpaperExporter {
         true
     } catch (_: IOException) { false }
 
+    fun clearLockScreenWallpaper(context: Context): Boolean = try {
+        val wm = WallpaperManager.getInstance(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) wm.clear(WallpaperManager.FLAG_LOCK)
+        else wm.clear()
+        true
+    } catch (_: IOException) { false }
+
     private fun parseHexColor(hex: String): Int = try {
         android.graphics.Color.parseColor(if (hex.startsWith("#")) hex else "#$hex")
     } catch (_: Exception) { android.graphics.Color.GRAY }
